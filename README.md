@@ -34,7 +34,7 @@ conda run -n taxel-pyqt python pyqt_live.py
 
 The left field uses colour for `fz` and arrows for `fx/fy`. Click any cell to switch the right-bottom plot to that taxel's complete buffered `fx/fy/fz` history. The two upper plots remain the overall array force and moment, with ranges that include the configured positive or negative shear load. When pitch equals taxel width, cells render with a ~12% visual inset so the array structure stays visible (render-only; the click target is the full cell).
 
-The Qt timer requests the configured refresh rate using `PreciseTimer`; this is a target, not a guaranteed acquisition rate. Frame timestamps and simulated contact motion use a monotonic clock, so missed ticks do not compress the time axis. History retains samples from at most the latest `--history-s` seconds (default 10), also capped at `ceil(hz * history_s)` frames. Delayed frames do not fabricate missing samples.
+The Qt timer requests the configured refresh rate using `PreciseTimer`; this is a target, not a guaranteed acquisition rate. Frame timestamps and simulated contact motion use a monotonic clock, so missed ticks do not compress the time axis. History retains samples from at most the latest `--history-s` seconds (default 10), also capped at `ceil(hz * history_s)` frames. Delayed frames do not fabricate missing samples. The single-taxel viewer follows the same timer, monotonic-time, and age-bounded-history behaviour.
 
 Uniform clamp-on-slider case with total `Fz=100 N` and total `Fx=40 N`:
 
@@ -144,10 +144,10 @@ The PyQt viewer tests run in their own environment (`test_model` and
 `test_rerun_live` belong to the `taxel-mpl` and `tactile-viz` environments):
 
 ```powershell
-conda run -n taxel-pyqt python -m unittest test_cloud_field test_pyqt_live test_pyqt_single_taxel -v
+conda run -n taxel-pyqt python -m unittest test_cloud_field test_pyqt_live test_pyqt_single_taxel test_review_regressions -v
 ```
 
-The tests cover zero load, centred and off-centred normal load, tangential lever arms, a pure torsional shear pair, invalid input, and a headless figure update.
+The tests cover zero load, centred and off-centred normal load, tangential lever arms, a pure torsional shear pair, invalid input, headless figure updates, real-time history behaviour, and arrow-direction regressions.
 
 Run the Rerun generator and recording checks separately in its isolated environment:
 
