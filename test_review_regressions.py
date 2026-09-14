@@ -105,6 +105,21 @@ class SingleTaxelWindowRegressionTests(unittest.TestCase):
         self.assertIn("20×20mm", window.info_label.text())
         self.assertNotIn("Ø=20mm", window.info_label.text())
 
+    def test_update_sensor_rejects_malformed_or_non_finite_force(self):
+        window = SingleTaxelWindow(start_timer=False)
+        self.addCleanup(window.close)
+        for invalid in (
+            [np.nan, 0.0, 0.0],
+            [1.0, np.inf, 0.0],
+            [1.0, 2.0],
+            [1.0, 2.0, 3.0, 4.0],
+            [[1.0, 2.0, 3.0]],
+        ):
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(ValueError):
+                    window._update_sensor(invalid)
+
 
 if __name__ == "__main__":
     unittest.main()
+
