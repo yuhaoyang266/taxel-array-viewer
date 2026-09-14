@@ -528,10 +528,6 @@ class CloudViewTests(unittest.TestCase):
         window.close()
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ArrowAlignmentTests(unittest.TestCase):
     """The arrow head must point along the same direction as its line.
 
@@ -576,3 +572,7 @@ class ArrowAlignmentTests(unittest.TestCase):
             self.assertAlmostEqual(head.x(), line_x[1], places=6)
             self.assertAlmostEqual(head.y(), line_y[1], places=6)
         window.close()
+
+
+if __name__ == "__main__":
+    unittest.main()

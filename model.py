@@ -9,11 +9,18 @@ CHANNELS = 3
 COMPONENTS = ("Fx", "Fy", "Fz", "Mx", "My", "Mz")
 
 
-def _positive_integer(value, name):
+def _integer(value, name):
     numeric = float(value)
-    if not np.isfinite(numeric) or not numeric.is_integer() or numeric <= 0.0:
-        raise ValueError(f"{name} must be a positive integer")
+    if not np.isfinite(numeric) or not numeric.is_integer():
+        raise ValueError(f"{name} must be an integer")
     return int(numeric)
+
+
+def _positive_integer(value, name):
+    numeric = _integer(value, name)
+    if numeric <= 0:
+        raise ValueError(f"{name} must be a positive integer")
+    return numeric
 
 
 def _positive_float(value, name):
@@ -151,8 +158,8 @@ def validated_readings(readings, geometry):
 
 
 def validated_index(row, col, geometry):
-    row = int(row)
-    col = int(col)
+    row = _integer(row, "row")
+    col = _integer(col, "col")
     if not 0 <= row < geometry.rows or not 0 <= col < geometry.cols:
         raise IndexError(f"taxel index out of range: row={row}, col={col}")
     return row, col
