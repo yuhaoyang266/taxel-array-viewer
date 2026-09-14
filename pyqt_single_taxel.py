@@ -3,6 +3,7 @@ from collections import deque
 import math
 import os
 import sys
+import time
 
 import numpy as np
 
@@ -18,14 +19,20 @@ FORCE_COLOURS = {
     "fy": (102, 187, 106),
     "fz": (66, 165, 245),
 }
+SCENARIOS = ("clamp-slider", "constant", "dynamic", "sine-shear")
 
 
 class SingleTaxelHistory:
-    def __init__(self, max_samples):
+    def __init__(self, max_samples, max_age_seconds=None):
         max_samples = int(max_samples)
         if max_samples <= 0:
             raise ValueError("max_samples must be positive")
+        if max_age_seconds is not None:
+            max_age_seconds = float(max_age_seconds)
+            if not np.isfinite(max_age_seconds) or max_age_seconds <= 0.0:
+                raise ValueError("max_age_seconds must be finite and positive")
         self.max_samples = max_samples
+        self.max_age_seconds = max_age_seconds
         self._times = deque(maxlen=max_samples)
         self._forces = deque(maxlen=max_samples)
 
@@ -40,7 +47,12 @@ class SingleTaxelHistory:
         if force_vec.shape != (3,) or not np.isfinite(force_vec).all():
             raise ValueError("force must have 3 finite components")
         self._times.append(elapsed_s)
-        self._forces.append(force_vec)
+        self._forces.append(force_vec.copy())
+        if self.max_age_seconds is not None:
+            cutoff = elapsed_s - self.max_age_seconds
+            while self._times and self._times[0] < cutoff:
+                self._times.popleft()
+                self._forces.popleft()
 
     def relative_times(self):
         if not self._times:
@@ -61,9 +73,14 @@ def generate_single_taxel_reading(
     tangential_force_n=40.0,
     tangential_axis="x",
 ):
+    scenario = str(scenario)
+    elapsed_s = float(elapsed_s)
     peak_force_n = float(peak_force_n)
     tangential_force_n = float(tangential_force_n)
-    elapsed_s = float(elapsed_s)
+    if scenario not in SCENARIOS:
+        raise ValueError(f"scenario must be one of {SCENARIOS}")
+    if not np.isfinite(elapsed_s):
+        raise ValueError("elapsed_s must be finite")
     if not np.isfinite(peak_force_n) or peak_force_n < 0.0:
         raise ValueError("peak_force_n must be finite and non-negative")
     if not np.isfinite(tangential_force_n):
@@ -80,7 +97,7 @@ def generate_single_taxel_reading(
         fx = tangential_force_n * math.sin(phase)
         fy = tangential_force_n * math.cos(phase)
         fz = peak_force_n * (0.85 + 0.15 * math.sin(0.5 * phase))
-    else:  # dynamic
+    else:
         phase = 2.0 * math.pi * 0.2 * elapsed_s
         fz = peak_force_n * (0.8 + 0.2 * math.sin(phase))
         shear_mag = 0.25 * fz
@@ -128,22 +145,27 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
             raise ValueError("tangential_force_n must be finite")
         if self.tangential_axis not in {"x", "y"}:
             raise ValueError("tangential_axis must be 'x' or 'y'")
-        if self.scenario not in {"clamp-slider", "constant", "dynamic", "sine-shear"}:
-            raise ValueError("scenario must be 'clamp-slider', 'constant', 'dynamic', or 'sine-shear'")
+        if self.scenario not in SCENARIOS:
+            raise ValueError(f"scenario must be one of {SCENARIOS}")
 
         ref_shear = abs(self.tangential_force_n) if abs(self.tangential_force_n) > 1e-6 else self.peak_force_n
         if arrow_scale_mm_per_n is None:
             arrow_scale_mm_per_n = 0.38 * self.diameter_mm / max(ref_shear, 1e-6)
         self.arrow_scale_mm_per_n = float(arrow_scale_mm_per_n)
+        if not np.isfinite(self.arrow_scale_mm_per_n) or self.arrow_scale_mm_per_n <= 0.0:
+            raise ValueError("arrow_scale_mm_per_n must be finite and positive")
 
         self.history = SingleTaxelHistory(
-            max_samples=max(1, math.ceil(self.hz * self.history_seconds))
+            max_samples=max(1, math.ceil(self.hz * self.history_seconds)),
+            max_age_seconds=self.history_seconds,
         )
         self.frame_index = 0
         self._setup_window()
+        self._start_time = time.perf_counter()
         self.advance_frame()
 
         self.timer = QtCore.QTimer(self)
+        self.timer.setTimerType(QtCore.Qt.TimerType.PreciseTimer)
         self.timer.timeout.connect(self.advance_frame)
         if start_timer:
             self.timer.start(max(1, round(1000.0 / self.hz)))
@@ -156,12 +178,10 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         central_widget = QtWidgets.QWidget(self)
         main_layout = QtWidgets.QVBoxLayout(central_widget)
 
-        # Top Information Banner
         self.info_label = QtWidgets.QLabel(central_widget)
         self.info_label.setStyleSheet("font-size: 15px; font-weight: bold; padding: 6px; color: #ECEFF1;")
         main_layout.addWidget(self.info_label)
 
-        # Content layout: Left 2D sensor view (5) + Right Force History (6)
         content_layout = QtWidgets.QHBoxLayout()
         main_layout.addLayout(content_layout, stretch=1)
 
@@ -188,7 +208,6 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         self.sensor_plot.showGrid(x=True, y=True, alpha=0.35)
         self.sensor_plot.hideButtons()
 
-        # Add single taxel shape
         radius = self.diameter_mm / 2.0
         left = -radius
         bottom = -radius
@@ -200,7 +219,6 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         self.taxel_item.setBrush(pg.mkBrush((25, 55, 150)))
         self.sensor_plot.addItem(self.taxel_item)
 
-        # Center reference point
         center_mark = pg.ScatterPlotItem(
             [0.0],
             [0.0],
@@ -211,7 +229,6 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         )
         self.sensor_plot.addItem(center_mark)
 
-        # Shear force vector arrow
         self.arrow_line = pg.PlotDataItem(pen=pg.mkPen((20, 20, 20), width=3))
         self.arrow_line.setZValue(10.0)
         self.sensor_plot.addItem(self.arrow_line)
@@ -230,7 +247,6 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         self.arrow_head.setZValue(11.0)
         self.sensor_plot.addItem(self.arrow_head)
 
-        # Selection outline
         if self.taxel_shape == "circle":
             angles = np.linspace(0.0, 2.0 * math.pi, 65)
             outline_x = radius * np.cos(angles)
@@ -268,7 +284,7 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         self.force_plot.setYRange(min_limit, max_limit, padding=0.0)
 
     def advance_frame(self):
-        elapsed_s = self.frame_index / self.hz
+        elapsed_s = time.perf_counter() - self._start_time
         force = generate_single_taxel_reading(
             self.scenario,
             elapsed_s,
@@ -282,6 +298,9 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         self._update_force_plot()
 
     def _update_sensor(self, force):
+        force = np.asarray(force, dtype=np.float64)
+        if force.shape != (3,) or not np.isfinite(force).all():
+            raise ValueError("force must have 3 finite components")
         fx, fy, fz = force
         ref_fz = max(self.peak_force_n, 1e-6)
         normalised = float(np.clip(fz / ref_fz, 0.0, 1.0))
@@ -301,7 +320,6 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
             )
         self.taxel_item.setBrush(pg.mkBrush(colour))
 
-        # Update shear arrow
         endpoint_x = self.arrow_scale_mm_per_n * fx
         endpoint_y = self.arrow_scale_mm_per_n * fy
         magnitude = math.hypot(fx, fy)
@@ -315,7 +333,7 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
             angle_degrees = math.degrees(math.atan2(fy, fx))
             self.arrow_head.setPos(endpoint_x, endpoint_y)
             self.arrow_head.setStyle(
-                angle=180.0 - angle_degrees,
+                angle=angle_degrees - 180.0,
                 headLen=head_len,
                 headWidth=head_width,
             )
@@ -326,11 +344,16 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
             self.arrow_line.setVisible(False)
 
         total_norm = math.sqrt(fx**2 + fy**2 + fz**2)
+        shape_size = (
+            f"Ø={self.diameter_mm:g}mm"
+            if self.taxel_shape == "circle"
+            else f"{self.diameter_mm:g}×{self.diameter_mm:g}mm"
+        )
         self.info_label.setText(
             f"Single 3-Axis Taxel Sensor | "
             f"fx = {fx:+.2f} N,  fy = {fy:+.2f} N,  fz = {fz:.2f} N  "
             f"(Shear: {magnitude:.2f} N,  Total ||f||: {total_norm:.2f} N)  |  "
-            f"Shape: {self.taxel_shape} (Ø={self.diameter_mm:g}mm)"
+            f"Shape: {self.taxel_shape} ({shape_size})"
         )
 
     def _update_force_plot(self):
@@ -356,7 +379,7 @@ def parse_args():
     parser.add_argument("--tangential-axis", choices=("x", "y"), default="x", help="Tangential shear axis")
     parser.add_argument(
         "--scenario",
-        choices=("clamp-slider", "constant", "dynamic", "sine-shear"),
+        choices=SCENARIOS,
         default="clamp-slider",
         help="Simulation scenario",
     )
