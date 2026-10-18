@@ -32,6 +32,8 @@ taxel_width_x_mm, taxel_width_y_mm  # 元件尺寸
 hz                             # 采样/刷新率
 ```
 
+标称默认：单 taxel 10 mm × 10 mm、无间距（两轴均 `pitch == taxel_width == 10 mm`），阵列 `3 x 3`；显式传参可覆盖，力学仍只按各 taxel 中心点集中力计算。
+
 ## 2. 坐标系与单位约定
 
 | 项 | 约定 |

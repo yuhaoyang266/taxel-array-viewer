@@ -1,5 +1,6 @@
 import math
 import os
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -12,7 +13,7 @@ from PySide6 import QtCore, QtWidgets
 from live_history import LiveHistory
 from live_source import generate_bottom_right_readings, generate_uniform_clamp_readings
 from model import ArrayGeometry, COMPONENTS, TaxelArrayModel
-from pyqt_live import PyQtTaxelWindow
+from pyqt_live import PyQtTaxelWindow, parse_args
 
 
 class LiveHistoryTests(unittest.TestCase):
@@ -238,16 +239,20 @@ class PyQtTaxelWindowTests(unittest.TestCase):
         window.close()
 
     def test_default_geometry_renders_taxels_with_visual_gap(self):
-        # Default geometry has pitch == width on both axes (20/20), so every
-        # cell must render shrunk to 88% and stay centred on its cell centre.
+        # The default geometry has pitch == width on both axes (the nominal
+        # contiguous 10 mm taxel), so every cell must render shrunk to 88% and
+        # stay centred on its cell centre.
+        geometry = ArrayGeometry()
         window = PyQtTaxelWindow(start_timer=False)
         x_centres, y_centres = window.geometry.centre_coordinates_mm()
 
+        self.assertEqual(window.geometry.taxel_width_x_mm, geometry.taxel_width_x_mm)
+        self.assertEqual(window.geometry.taxel_width_y_mm, geometry.taxel_width_y_mm)
         for row in range(window.geometry.rows):
             for col in range(window.geometry.cols):
                 rect = window.taxel_rectangles[row * window.geometry.cols + col].rect()
-                self.assertAlmostEqual(rect.width(), 20.0 * 0.88, delta=1e-6)
-                self.assertAlmostEqual(rect.height(), 20.0 * 0.88, delta=1e-6)
+                self.assertAlmostEqual(rect.width(), geometry.taxel_width_x_mm * 0.88, delta=1e-6)
+                self.assertAlmostEqual(rect.height(), geometry.taxel_width_y_mm * 0.88, delta=1e-6)
                 self.assertAlmostEqual(rect.center().x(), x_centres[col], delta=1e-6)
                 self.assertAlmostEqual(rect.center().y(), y_centres[row], delta=1e-6)
         window.close()
@@ -299,7 +304,12 @@ class CloudViewTests(unittest.TestCase):
                             view="cloud", cloud_channel=channel, start_timer=False,
                         )
                     self.addCleanup(window.close)
-                    np.testing.assert_allclose(window.cloud_colourbar.levels(), (-0.1, 0.1))
+                    # Every load is a single taxel one pitch away from the
+                    # array centre, so |M| == force * pitch under the unchanged
+                    # centre-lever-arm aggregation law.
+                    one_pitch_m = window.geometry.pitch_x_mm / 1000.0
+                    expected = abs(force) * one_pitch_m
+                    np.testing.assert_allclose(window.cloud_colourbar.levels(), (-expected, expected))
 
     def test_shear_colourbar_covers_load_independently_of_normal_force(self):
         for scale in ("auto", "fixed"):
@@ -322,12 +332,25 @@ class CloudViewTests(unittest.TestCase):
             tangential_force_n=-100.0, start_timer=False,
         )
         self.addCleanup(window.close)
+        # Independent physical bounds: the shear load can reach at most
+        # |shear| * one-pitch lever arm, while the normal-only range is
+        # peak_force * footprint whenever shear does not inflate it.
+        one_pitch_m = window.geometry.pitch_x_mm / 1000.0
+        max_shear_moment = abs(window.tangential_force_n) * one_pitch_m
+        footprint_m = max(
+            window.geometry.footprint_x_mm,
+            window.geometry.footprint_y_mm,
+        ) / 1000.0
+        normal_moment_ceiling = window.peak_force_n * footprint_m
+
         low, high = window.cloud_colourbar.levels()
-        self.assertLessEqual(low, -0.5)
-        self.assertGreaterEqual(high, 0.5)
+        self.assertLessEqual(low, -max_shear_moment)
+        self.assertGreaterEqual(high, max_shear_moment)
         for channel in ("mx", "my"):
             window.set_cloud_channel(channel)
-            np.testing.assert_allclose(window.cloud_colourbar.levels(), (-0.3, 0.3))
+            levels = window.cloud_colourbar.levels()
+            np.testing.assert_allclose(levels, (-normal_moment_ceiling, normal_moment_ceiling))
+            self.assertLess(levels[1], high)
 
     def test_cloud_window_renders_cloud_and_hides_array_layers(self):
         window = PyQtTaxelWindow(view="cloud", cloud_channel="fz", start_timer=False)
@@ -572,6 +595,21 @@ class ArrowAlignmentTests(unittest.TestCase):
             self.assertAlmostEqual(head.x(), line_x[1], places=6)
             self.assertAlmostEqual(head.y(), line_y[1], places=6)
         window.close()
+
+
+class PyQtLiveArgumentDefaultTests(unittest.TestCase):
+    def test_geometry_defaults_follow_the_model_nominal_geometry(self):
+        defaults = ArrayGeometry()
+
+        with patch.object(sys, "argv", ["pyqt_live.py"]):
+            arguments = parse_args()
+
+        self.assertEqual(arguments.rows, defaults.rows)
+        self.assertEqual(arguments.cols, defaults.cols)
+        self.assertEqual(arguments.pitch_x_mm, defaults.pitch_x_mm)
+        self.assertEqual(arguments.pitch_y_mm, defaults.pitch_y_mm)
+        self.assertEqual(arguments.taxel_width_x_mm, defaults.taxel_width_x_mm)
+        self.assertEqual(arguments.taxel_width_y_mm, defaults.taxel_width_y_mm)
 
 
 if __name__ == "__main__":

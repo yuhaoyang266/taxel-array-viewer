@@ -66,14 +66,14 @@ readings.shape == [rows, cols, 3]
 readings[row, col] == [fx, fy, fz]  # N
 ```
 
-The default centre pitch is `20 mm` in both axes, converted to metres before moment calculation. The array reference point is its geometric centre. The coordinate convention matches the existing experiment:
+The default centre pitch is `10 mm` in both axes, converted to metres before moment calculation. The array reference point is its geometric centre. The coordinate convention matches the existing experiment:
 
 - `+x`: right across the displayed array
 - `+y`: upward across the displayed array
 - `+z`: outward normal
 - `Mx`, `My`, `Mz`: right-hand-rule moments about the array centre
 
-The default pitch is a configurable demonstration assumption, not a claim about the real sensor geometry.
+The default pitch stays runtime configuration; since the 2026-09-22 hardware geometry alignment it is the owner-provided nominal sensor value, not a demonstration assumption (see the final section of this document).
 
 ## Interaction and Layout
 
@@ -180,7 +180,7 @@ taxel_width_x_mm, taxel_width_y_mm
 hz
 ```
 
-Defaults are `3 x 3`, `20 x 20 mm` taxel width, `20 x 20 mm` centre pitch, and `30 Hz`. The 20 mm size is a provisional visual and mechanics assumption, not a hardware claim. Width must not exceed pitch in either axis for the current non-overlapping planar layout.
+Defaults are `3 x 3`, `10 x 10 mm` taxel width, `10 x 10 mm` centre pitch, and `30 Hz`; the hardware geometry alignment at the end of this document supersedes the earlier 20 mm demonstration size and its "not a hardware claim" wording. Width must not exceed pitch in either axis for the current non-overlapping planar layout.
 
 Wrench aggregation uses taxel centre positions derived from pitch. Taxel width determines the rendered rectangle, total array footprint, and future force-to-traction area conversion; it does not alter the net force or lever-arm equations. Total footprint is:
 
@@ -242,3 +242,27 @@ Regression coverage uses the existing window/source boundary, displayed
 colourbar and curve data, controlled clock delays, and window layout checks.
 The wrench aggregator, sensor frame schema, and other viewer entry points are
 unchanged. Dense-array rendering performance is outside this repair.
+
+### Hardware geometry alignment (2026-09-22)
+
+Owner-provided hardware facts, approved as the new default geometry. These
+supersede the earlier statements that the 20 mm default is "not a hardware
+claim":
+
+1. The real sensor is a capacitive three-axis force array. Each taxel is
+   nominally ~10 mm x ~10 mm and the taxels are contiguous (no gap), so the
+   default is `pitch == taxel width == 10 mm` on both axes. The value is an
+   owner-provided nominal ("大概 10 mm"), not a metrology record.
+2. Mechanics convention (unchanged from the verified aggregation law): each
+   taxel's three-axis force is treated as a point force applied at the taxel
+   centre. The model does not resolve intra-taxel contact position or
+   distributed loads; moments arise only from centre lever arms.
+3. Defaults move from 20 mm to 10 mm (pitch == width, still no gap) across
+   `model.py` and every CLI entry point (`app.py`, `pyqt_live.py`,
+   `rerun_live.py`, and `pyqt_single_taxel.py --diameter-mm`). Rendering rules
+   keyed on `pitch == width` (the 88% visual inset) still apply at 10/10, and
+   the `width <= pitch` validation is retained.
+4. Array dimensions (`rows x cols`) stay configurable; the owner has not yet
+   supplied the real array size, so `3 x 3` remains the demonstration default.
+   Display-only cloud interpolation (`sigma = 0.55 * pitch`) follows the new
+   pitch automatically and remains non-physical.

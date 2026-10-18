@@ -122,6 +122,20 @@ class TaxelArrayModelTests(unittest.TestCase):
         self.assertIsNone(geometry.locate_taxel(12.5, 0.0, shape="circle"))
 
 
+class ArrayGeometryDefaultTests(unittest.TestCase):
+    def test_defaults_match_owner_confirmed_nominal_hardware_geometry(self):
+        geometry = ArrayGeometry()
+
+        self.assertEqual((geometry.rows, geometry.cols), (3, 3))
+        self.assertEqual(geometry.pitch_x_mm, 10.0)
+        self.assertEqual(geometry.pitch_y_mm, 10.0)
+        self.assertEqual(geometry.taxel_width_x_mm, 10.0)
+        self.assertEqual(geometry.taxel_width_y_mm, 10.0)
+        # Contiguous taxels: pitch == width keeps the 88% viewer inset active.
+        self.assertEqual(geometry.taxel_width_x_mm, geometry.pitch_x_mm)
+        self.assertEqual(geometry.taxel_width_y_mm, geometry.pitch_y_mm)
+
+
 class TaxelArrayAppSmokeTests(unittest.TestCase):
     def test_headless_figure_updates(self):
         import matplotlib

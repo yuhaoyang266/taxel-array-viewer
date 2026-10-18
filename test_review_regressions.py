@@ -102,8 +102,9 @@ class SingleTaxelWindowRegressionTests(unittest.TestCase):
     def test_rectangle_status_uses_rectangular_size_not_diameter_symbol(self):
         window = SingleTaxelWindow(taxel_shape="rectangle", start_timer=False)
         self.addCleanup(window.close)
-        self.assertIn("20×20mm", window.info_label.text())
-        self.assertNotIn("Ø=20mm", window.info_label.text())
+        size_text = f"{window.diameter_mm:g}×{window.diameter_mm:g}mm"
+        self.assertIn(size_text, window.info_label.text())
+        self.assertNotIn(f"Ø={window.diameter_mm:g}mm", window.info_label.text())
 
     def test_update_sensor_rejects_malformed_or_non_finite_force(self):
         window = SingleTaxelWindow(start_timer=False)

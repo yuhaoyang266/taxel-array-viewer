@@ -1,12 +1,14 @@
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
 from live_source import generate_simulated_readings
 from model import ArrayGeometry
-from rerun_live import normal_force_colours, run_animation
+from rerun_live import normal_force_colours, parse_args, run_animation
 
 
 class SimulatedLiveSourceTests(unittest.TestCase):
@@ -87,6 +89,21 @@ class RerunRecordingSmokeTests(unittest.TestCase):
             self.assertEqual(frame_count, 3)
             self.assertTrue(output_path.is_file())
             self.assertGreater(output_path.stat().st_size, 0)
+
+
+class RerunLiveArgumentDefaultTests(unittest.TestCase):
+    def test_geometry_defaults_follow_the_model_nominal_geometry(self):
+        defaults = ArrayGeometry()
+
+        with patch.object(sys, "argv", ["rerun_live.py"]):
+            arguments = parse_args()
+
+        self.assertEqual(arguments.rows, defaults.rows)
+        self.assertEqual(arguments.cols, defaults.cols)
+        self.assertEqual(arguments.pitch_x_mm, defaults.pitch_x_mm)
+        self.assertEqual(arguments.pitch_y_mm, defaults.pitch_y_mm)
+        self.assertEqual(arguments.taxel_width_x_mm, defaults.taxel_width_x_mm)
+        self.assertEqual(arguments.taxel_width_y_mm, defaults.taxel_width_y_mm)
 
 
 if __name__ == "__main__":

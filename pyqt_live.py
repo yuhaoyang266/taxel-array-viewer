@@ -672,10 +672,10 @@ def parse_args():
     parser.add_argument("--history-s", type=float, default=10.0)
     parser.add_argument("--rows", type=int, default=3)
     parser.add_argument("--cols", type=int, default=3)
-    parser.add_argument("--pitch-x-mm", type=float, default=20.0)
-    parser.add_argument("--pitch-y-mm", type=float, default=20.0)
-    parser.add_argument("--taxel-width-x-mm", type=float, default=20.0)
-    parser.add_argument("--taxel-width-y-mm", type=float, default=20.0)
+    parser.add_argument("--pitch-x-mm", type=float, default=10.0)
+    parser.add_argument("--pitch-y-mm", type=float, default=10.0)
+    parser.add_argument("--taxel-width-x-mm", type=float, default=10.0)
+    parser.add_argument("--taxel-width-y-mm", type=float, default=10.0)
     parser.add_argument("--peak-force-n", type=float, default=5.0)
     parser.add_argument(
         "--scenario",

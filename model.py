@@ -34,10 +34,10 @@ def _positive_float(value, name):
 class ArrayGeometry:
     rows: int = 3
     cols: int = 3
-    pitch_x_mm: float = 20.0
-    pitch_y_mm: float = 20.0
-    taxel_width_x_mm: float = 20.0
-    taxel_width_y_mm: float = 20.0
+    pitch_x_mm: float = 10.0
+    pitch_y_mm: float = 10.0
+    taxel_width_x_mm: float = 10.0
+    taxel_width_y_mm: float = 10.0
 
     def __post_init__(self):
         object.__setattr__(self, "rows", _positive_integer(self.rows, "rows"))

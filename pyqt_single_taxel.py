@@ -112,7 +112,7 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         self,
         hz=30.0,
         history_seconds=10.0,
-        diameter_mm=20.0,
+        diameter_mm=10.0,
         taxel_shape="circle",
         peak_force_n=100.0,
         tangential_force_n=40.0,
@@ -372,7 +372,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Single 3-axis taxel sensor visualizer")
     parser.add_argument("--hz", type=float, default=30.0, help="Refresh frequency in Hz")
     parser.add_argument("--history-s", type=float, default=10.0, help="Rolling history window in seconds")
-    parser.add_argument("--diameter-mm", type=float, default=20.0, help="Sensor diameter/width in mm")
+    parser.add_argument("--diameter-mm", type=float, default=10.0, help="Sensor diameter/width in mm")
     parser.add_argument("--taxel-shape", choices=("circle", "rectangle"), default="circle")
     parser.add_argument("--peak-force-n", type=float, default=100.0, help="Normal force Fz in N")
     parser.add_argument("--tangential-force-n", type=float, default=40.0, help="Tangential force Fx/Fy in N")

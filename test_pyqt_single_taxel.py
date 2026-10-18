@@ -1,5 +1,7 @@
 import os
+import sys
 import unittest
+from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("PYQTGRAPH_QT_LIB", "PySide6")
@@ -7,10 +9,12 @@ os.environ.setdefault("PYQTGRAPH_QT_LIB", "PySide6")
 import numpy as np
 from PySide6 import QtWidgets
 
+from model import ArrayGeometry
 from pyqt_single_taxel import (
     SingleTaxelHistory,
     SingleTaxelWindow,
     generate_single_taxel_reading,
+    parse_args,
 )
 
 
@@ -88,11 +92,25 @@ class SingleTaxelWindowTests(unittest.TestCase):
         self.assertTrue(isinstance(window.taxel_item, QtWidgets.QGraphicsRectItem))
         window.close()
 
+    def test_default_diameter_follows_the_model_nominal_geometry(self):
+        window = SingleTaxelWindow(start_timer=False)
+        self.addCleanup(window.close)
+
+        self.assertEqual(window.diameter_mm, ArrayGeometry().taxel_width_x_mm)
+
     def test_invalid_parameters_raise(self):
         with self.assertRaises(ValueError):
             SingleTaxelWindow(hz=0.0, start_timer=False)
         with self.assertRaises(ValueError):
             SingleTaxelWindow(taxel_shape="triangle", start_timer=False)
+
+
+class SingleTaxelArgumentDefaultTests(unittest.TestCase):
+    def test_diameter_default_follows_the_model_nominal_geometry(self):
+        with patch.object(sys, "argv", ["pyqt_single_taxel.py"]):
+            arguments = parse_args()
+
+        self.assertEqual(arguments.diameter_mm, ArrayGeometry().taxel_width_x_mm)
 
 
 if __name__ == "__main__":
