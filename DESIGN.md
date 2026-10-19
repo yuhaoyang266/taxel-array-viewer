@@ -1,5 +1,14 @@
 # Interactive 3-Axis Taxel Array
 
+> **2026-10-19 sensor-body adaptation (draft, documentation only):**
+> [五间隙电容单元：前端适配设计与改造计划](docs/superpowers/specs/2026-10-19-capacitive-taxel-viewer-design.md)
+> records the newly confirmed moving central plate, four side capacitances,
+> bottom capacitance, silicone support, and current/future load-surface scope.
+> It reviews the supplied UI plan and proposes staged changes; it does not
+> supersede the existing force schema or authorize implementation. Calibration
+> remains outside this frontend's scope. Earlier approvals below remain
+> historical approvals of their respective implemented features.
+
 > Standalone export (2026-09-12): this document preserves the original design
 > history. Source paths and environment names below describe that historical
 > workspace. The current standalone commands are in [README.md](README.md);
