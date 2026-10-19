@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="五间隙电容单元 3×3 阵列前端静态设计预览：结构示意，非尺寸图；示意数据，非实测。">
+<title>阶段 A 预览 · 五间隙电容单元 · 3×3 阵列</title>
+<style>
+:root{
+  --bg:#0B0F17;--panel:#111827;--panel-2:#0F1724;--canvas:#0D131F;--card:#0B1220;
+  --line:#1F2B3B;--line-2:#2A3A4E;--struct:#4A5D76;
+  --text:#E6EDF6;--muted:#93A4B8;--dim:#64748B;--faint:#4B5B70;
+  --fx:#EF5350;--fy:#66BB6A;--fz:#42A5F5;
+  --mx:#26C6DA;--my:#FFCA28;--mz:#CE93D8;
+  --select:#FFD166;--accent:#7DD3FC;
+  --sans:"Segoe UI","Microsoft YaHei UI","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono","Cascadia Code",Consolas,"SF Mono","Liberation Mono",monospace;
+  --radius:12px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--text);
+  background:radial-gradient(1100px 560px at 8% -8%,rgba(66,165,245,.10),transparent 60%),
+             radial-gradient(900px 480px at 94% -4%,rgba(245,197,66,.05),transparent 55%),var(--bg);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+a{color:var(--accent);text-decoration:none;border-bottom:1px dotted rgba(125,211,252,.45)}
+a:hover{border-bottom-color:var(--accent)}
+.skip{position:absolute;left:-9999px;top:0;padding:8px 12px;background:var(--panel);z-index:100}
+.skip:focus{left:12px;top:12px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+.topbar{display:flex;flex-wrap:wrap;gap:18px 28px;align-items:center;justify-content:space-between;padding:22px 28px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(17,24,39,.8),rgba(11,15,23,.45))}
+.brand{display:flex;gap:14px;align-items:center;min-width:0}
+.brand-mark{width:36px;height:36px;flex:none;color:var(--accent);opacity:.92}
+.eyebrow{margin:0 0 5px;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent)}
+h1{margin:0;font-size:19px;font-weight:650;letter-spacing:.01em}
+.subtitle{margin:5px 0 0;color:var(--muted);font-size:12.5px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid var(--line-2);font-size:11.5px;color:var(--muted);background:rgba(15,23,36,.6);white-space:nowrap}
+.chip.warn{border-color:rgba(245,197,66,.34);background:rgba(245,197,66,.07);color:#EED08A}
+.chip.mono{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase}
+.notice{position:sticky;top:0;z-index:60;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;padding:10px 28px;font-size:12.8px;color:#F3D99A;border-top:1px solid rgba(245,197,66,.26);border-bottom:1px solid rgba(245,197,66,.26);background:linear-gradient(90deg,rgba(245,197,66,.13),rgba(245,197,66,.045) 55%,rgba(11,15,23,.92));backdrop-filter:blur(6px)}
+.notice svg{width:14px;height:14px;flex:none;align-self:center;color:#F5C542}
+.notice strong{color:#FFE3A3;font-weight:650;letter-spacing:.01em}
+.notice .tail{color:#A99569;font-size:11.5px}
+
+main{max-width:1500px;margin:0 auto;padding:22px 28px 46px;display:grid;grid-template-columns:minmax(0,1.62fr) minmax(340px,1fr);gap:18px;align-items:start}
+.panel{background:linear-gradient(180deg,#121A29 0%,var(--panel-2) 100%);border:1px solid var(--line);border-radius:var(--radius);box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 18px 40px -32px #000}
+.field-panel{grid-column:1;min-width:0}
+.side{grid-column:2;display:flex;flex-direction:column;gap:18px;min-width:0}
+.detail-panel,.notes-panel,.tokens-panel{grid-column:1 / -1;min-width:0}
+.panel-head{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:flex-start;justify-content:space-between;padding:18px 20px 12px}
+.panel-title{min-width:0;flex:1 1 420px}
+.panel-head h2{margin:0;font-size:16px;font-weight:650;letter-spacing:.01em}
+.h2-sub{font-size:12px;font-weight:450;color:var(--muted);letter-spacing:.02em;margin-left:8px}
+.panel-sub{margin:6px 0 0;font-size:12px;color:var(--muted);max-width:80ch}
+
+.coord-card{display:flex;gap:10px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#0B1220;flex:none}
+.coord-card svg{width:92px;height:auto;display:block}
+.coord-lbl{font-family:var(--mono);font-size:9px;fill:#9FB0C6}
+.coord-list{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted);white-space:nowrap}
+.coord-list i{font-style:normal;font-family:var(--mono);margin-right:4px}
+
+.selection-strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:0 20px 6px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#0B1220,#0A101C)}
+.sel-tag{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:#EBCF8A;letter-spacing:.06em}
+.sel-dot{width:7px;height:7px;border-radius:2px;background:var(--select);box-shadow:0 0 0 3px rgba(255,209,102,.14)}
+.sel-id{font-size:13px;color:var(--text);letter-spacing:.06em}
+.sel-force{display:inline-flex;align-items:baseline;gap:5px;font-size:10.5px;color:var(--muted)}
+.sel-force b{font-size:15px;font-weight:600}
+.sel-force small{font-size:10px;color:var(--dim)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none}
+.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;border:1px solid rgba(245,197,66,.32);background:rgba(245,197,66,.08);color:#EBCF8A;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+.tag.muted{border-color:var(--line-2);background:rgba(15,23,36,.6);color:var(--muted)}
+.tag-inline{margin-left:auto}
+
+.svg-wrap{padding:4px 14px 0}
+.svg-wrap svg{display:block;width:100%;height:auto}
+.cell-tag{font-family:var(--mono);font-size:11px;fill:#9FB0C6;letter-spacing:.02em}
+.cell-fz{font-family:var(--mono);font-size:11px;fill:#C9D6E6;letter-spacing:.01em}
+.axis-lbl{font-family:var(--mono);font-size:11px;fill:#7C8DA3}
+.axis-note{font-family:var(--sans);font-size:10.5px;fill:#6E8098;letter-spacing:.02em}
+.sel-badge{font-family:var(--sans);font-size:10.5px;fill:#FFD166;letter-spacing:.12em}
+.unit .cell-frame{transition:stroke .15s ease,stroke-width .15s ease}
+.unit:hover .cell-frame{stroke:#8FD8F5;stroke-width:1.6}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px 22px;padding:14px 20px 4px;align-items:center}
+.legend-item{display:flex;align-items:center;gap:9px;min-width:0}
+.lg{display:flex;flex-direction:column;line-height:1.35}
+.lg b{font-size:11.5px;font-weight:600;color:#D6E1EE}
+.lg small{font-size:10.5px;color:var(--dim)}
+.heatbar{height:9px;width:126px;border-radius:99px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(90deg,#12263f 0%, #1c4e6b 25%, #2e8a86 50%, #b79b3e 70%, #cf7a2f 85%, #b83b2e 100%);flex:none}
+.sw-sel{width:34px;height:22px;border:2px solid var(--select);border-radius:6px;box-shadow:0 0 0 3px rgba(255,209,102,.12);flex:none}
+.sw-frame{width:34px;height:22px;border:1px solid #3A4A60;border-radius:6px;flex:none}
+.field-note{margin:10px 20px 0;padding:0 0 16px;font-size:11.5px;color:var(--dim);line-height:1.55}
+
+.card{padding:16px 18px 14px}
+.card-head{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.card-head h3{margin:0;font-size:14px;font-weight:640;letter-spacing:.01em;line-height:1.4}
+.card-sub{margin:3px 0 0;font-size:11.5px;color:var(--muted)}
+.card-note{margin:10px 0 0;font-size:11.5px;color:var(--dim);line-height:1.5}
+.forces{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.force{padding:10px 12px 9px;border:1px solid var(--line);border-radius:9px;background:#0B1220;min-width:0}
+.fk{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.fv{display:inline-block;margin-top:3px;font-size:20px;font-weight:600;letter-spacing:-.02em;line-height:1.2}
+.fu{font-size:10.5px;color:var(--dim);margin-left:4px}
+.wrow{display:grid;grid-template-columns:56px minmax(40px,1fr) 104px;gap:10px;align-items:center;padding:8px 0;border-top:1px solid rgba(31,43,59,.75)}
+.wrow:first-of-type{border-top:none;padding-top:2px}
+.wrow:last-of-type{padding-bottom:2px}
+.wkey{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em}
+.meter{position:relative;height:6px;border-radius:99px;background:#0B1220;border:1px solid var(--line);overflow:hidden}
+.meter:before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(148,163,184,.35)}
+.meter i{position:absolute;top:0;bottom:0;border-radius:99px;opacity:.9}
+.wval{justify-self:end;font-size:14.5px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+.wval small{font-size:9.5px;color:var(--dim);font-weight:400;margin-left:5px;letter-spacing:.02em}
+.formula{margin:10px 0 0;padding:7px 10px;border:1px dashed var(--line-2);border-radius:8px;background:rgba(13,19,31,.7);font-size:10.5px;color:var(--muted);overflow-x:auto;white-space:nowrap}
+.spark{margin:4px 0 6px;padding:8px 6px 0;border:1px solid var(--line);border-radius:9px;background:#0B1220}
+.spark svg{display:block;width:100%;height:auto}
+.spark-tick{font-family:var(--mono);font-size:9px;fill:#64748B;letter-spacing:.02em}
+.spark-legend{display:flex;gap:14px;font-size:10.5px;color:var(--muted);padding:6px 2px 0}
+.spark-legend i{margin-right:5px}
+.status-list{margin:0;display:flex;flex-direction:column}
+.status-list>div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid rgba(31,43,59,.75)}
+.status-list>div:first-child{border-top:none;padding-top:2px}
+.status-list dt{font-size:11.5px;color:var(--dim)}
+.status-list dd{margin:0;font-size:11.5px;color:var(--muted);text-align:right}
+
+.detail-chips{display:flex;flex-wrap:wrap;gap:8px;max-width:440px}
+.identity-legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin:0 20px 4px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#0B1220;font-size:11px;color:var(--muted)}
+.identity-legend span{display:inline-flex;align-items:center;gap:7px}
+.sw{width:16px;height:11px;border-radius:3px;display:inline-block;flex:none}
+.sw-frame{background:#16202E;border:1px solid var(--struct)}
+.sw-plate{background:linear-gradient(135deg,#F7D05A,#CF9A18)}
+.sw-face{background:linear-gradient(135deg,#FFFFFF,#C3CFDE)}
+.sw-gap{background:repeating-linear-gradient(180deg,#7DD3FC 0 1px,transparent 1px 4px);border:1px solid rgba(125,211,252,.5)}
+.sw-silicone{background:rgba(125,211,252,.18);border:1px dashed #7DD3FC}
+.detail-details{padding:0 20px 18px}
+.detail-summary{display:flex;align-items:center;gap:10px;margin-top:10px;padding:9px 2px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;list-style:none;color:var(--muted);font-size:12px}
+.detail-summary::-webkit-details-marker{display:none}
+.chev{font-size:9px;color:var(--accent);transition:transform .15s ease;display:inline-block}
+details[open] .chev{transform:rotate(90deg)}
+.sum-title{letter-spacing:.03em}
+.collapse-state{margin-left:auto;font-size:10px;color:var(--faint);letter-spacing:.04em}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+.schematic{background:#0D131F;border:1px solid var(--line);border-radius:10px;padding:14px 16px 12px;min-width:0}
+.schematic header h3{margin:0;font-size:13.5px;font-weight:640}
+.schematic header h3 .idx{margin-right:8px;color:var(--accent);font-size:12px}
+.schematic header p{margin:4px 0 0;font-size:11px;color:var(--dim)}
+.schematic-svg{margin-top:8px}
+.schematic-svg svg{display:block;width:100%;height:auto}
+.schematic footer{margin-top:10px;padding-top:9px;border-top:1px solid rgba(31,43,59,.75);font-size:11px;color:var(--dim);line-height:1.5}
+.gap-key{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:14px;padding:11px 13px;border:1px dashed var(--line-2);border-radius:10px;background:rgba(125,211,252,.025)}
+.gap-key-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-right:2px}
+.gap-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid var(--line-2);border-radius:999px;background:#0B1220;font-size:10.5px;color:var(--muted)}
+.gap-chip svg{width:20px;height:13px;stroke:#7DD3FC;stroke-width:1.2;stroke-linecap:round}
+.gap-chip .mono{color:#B8C7DA;font-size:10px}
+.gap-key-note{flex:1 1 100%;font-size:10.5px;color:var(--dim);line-height:1.5}
+.d-strong{font-family:var(--sans);font-size:14px;font-weight:600;fill:#DCE6F2;letter-spacing:.01em}
+.d-sub{font-family:var(--sans);font-size:11.5px;fill:#8FA2B8}
+.d-note{font-family:var(--sans);font-size:10.5px;fill:#64748B}
+.d-mono{font-family:var(--mono);font-size:10.5px;fill:#6E8098}
+.d-badge{font-family:var(--mono);font-size:11.5px;fill:#7DD3FC}
+.leader{fill:none;stroke:#52627A;stroke-width:1;stroke-dasharray:3 3}
+.node{fill:#7DD3FC}
+.gap-fill{fill:rgba(125,211,252,.09)}
+.gap-line{stroke:#7DD3FC;stroke-opacity:.55;stroke-width:1.3}
+.pad{fill:#3B4C61;stroke:#5E7794;stroke-width:1.2}
+
+.notes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:0 26px;padding:2px 20px 18px}
+.note-item{display:flex;gap:12px;padding:11px 0;border-top:1px solid rgba(31,43,59,.75)}
+.note-item .n{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.06em;padding-top:2px;flex:none}
+.note-item p{margin:0;font-size:12px;color:var(--muted);line-height:1.55}
+.note-item b{color:#D8E3F0;font-weight:600}
+.token-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px 24px;padding:2px 20px 20px}
+.token-group h4{margin:0 0 7px;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:500}
+.tok{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:11px;color:var(--muted)}
+.tok .sw{width:14px;height:14px;border-radius:4px;border:1px solid rgba(255,255,255,.12)}
+.tok code{font-family:var(--mono);font-size:10px;color:#9FB0C6}
+.token-note{margin:0 20px 18px;padding:9px 12px;border:1px dashed var(--line-2);border-radius:8px;font-size:10.5px;color:var(--dim);line-height:1.5}
+
+footer{border-top:1px solid var(--line);padding:18px 28px 26px;display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:space-between;color:var(--faint);font-size:11px}
+footer .mono{color:#7C8DA3}
+
+@media (max-width:1180px){main{grid-template-columns:minmax(0,1.45fr) minmax(320px,1fr)}}
+@media (max-width:980px){
+  main{grid-template-columns:minmax(0,1fr);padding:18px 18px 40px}
+  .field-panel,.side,.detail-panel,.notes-panel,.tokens-panel{grid-column:auto}
+  .side{display:grid;grid-template-columns:1fr;gap:16px}
+  .topbar{padding:18px 18px 14px}
+  .notice{padding:10px 18px}
+  .panel-head{padding:16px 16px 10px}
+  .svg-wrap{padding:2px 8px 0}
+  .selection-strip{margin:0 14px 4px}
+  .legend{padding:12px 16px 2px;gap:10px 16px}
+  .field-note{margin:10px 16px 0;padding-bottom:14px}
+  .detail-details{padding:0 16px 16px}
+  .identity-legend{margin:0 16px 2px}
+  .detail-grid{grid-template-columns:1fr}
+  .notes-grid{padding:2px 16px 16px}
+  .token-groups{padding:2px 16px 18px}
+  footer{padding:16px 18px 22px}
+  .coord-card{margin-left:auto}
+}
+@media (max-width:640px){
+  h1{font-size:17px}
+  .subtitle{font-size:11.5px}
+  .forces{gap:8px}
+  .fv{font-size:17px}
+  .wrow{grid-template-columns:48px minmax(32px,1fr) 94px}
+  .gap-key{padding:10px}
+  .collapse-state{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到主内容</a>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+      <rect x="3.5" y="3.5" width="33" height="33" rx="9" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".75"/>
+      <circle cx="20" cy="20" r="9" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      <circle cx="20" cy="20" r="2.2" fill="currentColor"/>
+      <path d="M20 4v6M20 30v6M4 20h6M30 20h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <p class="eyebrow">STAGE A · VISUAL PREVIEW</p>
+      <h1>五间隙电容单元 · 3×3 阵列前端预览</h1>
+      <p class="subtitle">静态设计稿 · 暗色仪器主题 · 只表达结构与布局，不是产品代码</p>
+    </div>
+  </div>
+  <div class="meta">
+    <span class="chip warn">结构示意，非尺寸图</span>
+    <span class="chip warn">示意数据，非实测</span>
+    <span class="chip mono">MOCKUP · 2026-10-19</span>
+  </div>
+</header>
+
+<div class="notice" role="note">
+  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8 14.8 14H1.2Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 5.8v3.6M8 11.6v.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+  <span><strong>结构示意，非尺寸图；当前仅显示三轴力，未接入间隙/电容读数。</strong></span>
+  <span class="tail">颜色、箭头与读数均为页面内置示意，不代表实测或标定结果。</span>
+</div>
+
+<main id="main">
+  <section class="panel field-panel" aria-labelledby="fieldTitle">
+    <header class="panel-head">
+      <div class="panel-title">
+        <p class="eyebrow">ARRAY VIEW</p>
+        <h2 id="fieldTitle">阵列主视图 <span class="h2-sub">九单元受力面 · 逻辑区域</span></h2>
+        <p class="panel-sub">色盘 = 法向力 fz 的示意色阶；箭头 = 切向力 fx/fy；白色圆面 = 圆柱受力面（结构身份，不随载荷染色）。</p>
+      </div>
+      <div class="coord-card" role="group" aria-label="屏幕坐标徽章：+x 向右、+y 向上、+z 出面">
+        <svg viewBox="0 0 108 84" aria-hidden="true">
+          <line x1="22" y1="58" x2="86" y2="58" stroke="#EF5350" stroke-width="1.7" stroke-linecap="round"/>
+          <polygon points="86,58 77,54 77,62" fill="#EF5350"/>
+          <line x1="22" y1="58" x2="22" y2="18" stroke="#66BB6A" stroke-width="1.7" stroke-linecap="round"/>
+          <polygon points="22,18 18,26 26,26" fill="#66BB6A"/>
+          <circle cx="22" cy="58" r="6.5" fill="none" stroke="#42A5F5" stroke-width="1.5"/>
+          <circle cx="22" cy="58" r="1.6" fill="#42A5F5"/>
+          <text x="91" y="62" class="coord-lbl">+x</text>
+          <text x="17" y="12" class="coord-lbl" text-anchor="middle">+y</text>
+          <text x="31" y="80" class="coord-lbl">+z 出面</text>
+        </svg>
+        <div class="coord-list">
+          <span><i style="color:#EF5350">+x</i>向右</span>
+          <span><i style="color:#66BB6A">+y</i>向上</span>
+          <span><i style="color:#42A5F5">+z</i>出面</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="selection-strip" role="group" aria-label="当前选中单元读数（示意数据）">
+  <span class="sel-tag"><i class="sel-dot"></i>选中单元</span>
+  <span class="sel-id mono">R1 C1</span>
+  <span class="sel-force"><i class="dot" style="background:var(--fx)"></i><span class="mono">fx</span><b class="mono" style="color:var(--fx)">+2.60</b><small>N</small></span>
+  <span class="sel-force"><i class="dot" style="background:var(--fy)"></i><span class="mono">fy</span><b class="mono" style="color:var(--fy)">+3.80</b><small>N</small></span>
+  <span class="sel-force"><i class="dot" style="background:var(--fz)"></i><span class="mono">fz</span><b class="mono" style="color:var(--fz)">50.00</b><small>N</small></span>
+  <span class="tag tag-inline">示意数据</span>
+</div>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 780 720" role="img" aria-labelledby="arrayTitle arrayDesc">
+  <title id="arrayTitle">3×3 阵列受力面视图（结构示意，非尺寸图）</title>
+  <desc id="arrayDesc">九个逻辑单元，每个单元以白色受光圆形受力面与中性固定线框表达；色盘为法向力示意色阶，箭头为切向力示意矢量。所有力值与颜色均为页面内置示意数据，非实测。</desc>
+  <defs>
+    <pattern id="dotGridMain" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="1.2" cy="1.2" r="1.1" fill="#1B2736"/>
+    </pattern>
+    <radialGradient id="heatShadeMain" cx="50%" cy="42%" r="62%">
+      <stop offset=".5" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity=".40"/>
+    </radialGradient>
+    <radialGradient id="faceGradMain" cx="38%" cy="32%" r="72%">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset=".62" stop-color="#F1F5FA"/>
+      <stop offset="1" stop-color="#C7D2E0"/>
+    </radialGradient>
+    <filter id="faceShadowMain" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity=".55"/>
+    </filter>
+  </defs>
+  <rect x="58" y="40" width="664" height="640" rx="14" fill="#0D131F" stroke="#1F2B3B" stroke-width="1"/>
+  <rect x="58" y="40" width="664" height="640" rx="14" fill="url(#dotGridMain)" opacity=".7"/>
+  <text x="70" y="62" class="axis-note">3×3 逻辑单元 · 全部数值为示意数据</text>
+  <text x="100" y="166" text-anchor="end" class="axis-lbl">row 2</text>
+      <line x1="104" y1="162" x2="112" y2="162" stroke="#3A4A60" stroke-width="1"/>
+<text x="100" y="366" text-anchor="end" class="axis-lbl">row 1</text>
+      <line x1="104" y1="362" x2="112" y2="362" stroke="#3A4A60" stroke-width="1"/>
+<text x="100" y="566" text-anchor="end" class="axis-lbl">row 0</text>
+      <line x1="104" y1="562" x2="112" y2="562" stroke="#3A4A60" stroke-width="1"/>
+  <text x="196" y="676" text-anchor="middle" class="axis-lbl">col 0</text>
+      <line x1="196" y1="662" x2="196" y2="670" stroke="#3A4A60" stroke-width="1"/>
+<text x="396" y="676" text-anchor="middle" class="axis-lbl">col 1</text>
+      <line x1="396" y1="662" x2="396" y2="670" stroke="#3A4A60" stroke-width="1"/>
+<text x="596" y="676" text-anchor="middle" class="axis-lbl">col 2</text>
+      <line x1="596" y1="662" x2="596" y2="670" stroke="#3A4A60" stroke-width="1"/>
+  <g class="unit" role="img" aria-label="row 0, col 0 · fx +3.20 N · fy +1.40 N · fz 18.5 N（示意数据）">
+      <title>row 0, col 0 · fx +3.20 N · fy +1.40 N · fz 18.5 N（示意数据）</title>
+      <rect class="cell-frame" x="104" y="470" width="184" height="184" rx="16" fill="none" stroke="#3A4A60" stroke-width="1.2"/>
+      <circle cx="196" cy="562" r="72" fill="#256b78" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+      <circle cx="196" cy="562" r="72" fill="url(#heatShadeMain)"/>
+      <circle cx="196" cy="562" r="78" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1" stroke-dasharray="2 5"/>
+      <circle cx="196" cy="562" r="38" fill="url(#faceGradMain)" stroke="#FFFFFF" stroke-width="1.3" filter="url(#faceShadowMain)"/>
+      <circle cx="196" cy="562" r="41.5" fill="none" stroke="rgba(255,255,255,.30)" stroke-width=".8"/>
+      <ellipse cx="185" cy="547" rx="19" ry="9" fill="#FFFFFF" opacity=".55"/>
+      <circle cx="196" cy="562" r="2.2" fill="#1B2433" opacity=".55"/>
+      <g class="shear" aria-hidden="true">
+      <line x1="196.0" y1="562.0" x2="224.8" y2="549.4" stroke="#05080E" stroke-width="6.6" stroke-linecap="round" opacity=".9"/>
+      <line x1="196.0" y1="562.0" x2="224.8" y2="549.4" stroke="#F4F8FF" stroke-width="2.2" stroke-linecap="round"/>
+      <polygon points="224.8,549.4 216.2,558.4 212.3,549.6" fill="#F4F8FF" stroke="#05080E" stroke-width="2.2" stroke-linejoin="round"/>
+    </g>
+      <text x="114" y="486" class="cell-tag">R0 C0</text>
+      <text x="196" y="648" text-anchor="middle" class="cell-fz">fz 18.5 N</text>
+      
+    </g>
+<g class="unit" role="img" aria-label="row 0, col 1 · fx -1.80 N · fy +4.60 N · fz 34.0 N（示意数据）">
+      <title>row 0, col 1 · fx -1.80 N · fy +4.60 N · fz 34.0 N（示意数据）</title>
+      <rect class="cell-frame" x="304" y="470" width="184" height="184" rx="16" fill="none" stroke="#3A4A60" stroke-width="1.2"/>
+      <circle cx="396" cy="562" r="72" fill="#a99945" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+      <circle cx="396" cy="562" r="72" fill="url(#heatShadeMain)"/>
+      <circle cx="396" cy="562" r="78" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1" stroke-dasharray="2 5"/>
+      <circle cx="396" cy="562" r="38" fill="url(#faceGradMain)" stroke="#FFFFFF" stroke-width="1.3" filter="url(#faceShadowMain)"/>
+      <circle cx="396" cy="562" r="41.5" fill="none" stroke="rgba(255,255,255,.30)" stroke-width=".8"/>
+      <ellipse cx="385" cy="547" rx="19" ry="9" fill="#FFFFFF" opacity=".55"/>
+      <circle cx="396" cy="562" r="2.2" fill="#1B2433" opacity=".55"/>
+      <g class="shear" aria-hidden="true">
+      <line x1="396.0" y1="562.0" x2="379.8" y2="520.6" stroke="#05080E" stroke-width="6.6" stroke-linecap="round" opacity=".9"/>
+      <line x1="396.0" y1="562.0" x2="379.8" y2="520.6" stroke="#F4F8FF" stroke-width="2.2" stroke-linecap="round"/>
+      <polygon points="379.8,520.6 388.5,529.6 379.5,533.1" fill="#F4F8FF" stroke="#05080E" stroke-width="2.2" stroke-linejoin="round"/>
+    </g>
+      <text x="314" y="486" class="cell-tag">R0 C1</text>
+      <text x="396" y="648" text-anchor="middle" class="cell-fz">fz 34.0 N</text>
+      
+    </g>
+<g class="unit" role="img" aria-label="row 0, col 2 · fx +0.00 N · fy +0.00 N · fz 6.5 N（示意数据）">
+      <title>row 0, col 2 · fx +0.00 N · fy +0.00 N · fz 6.5 N（示意数据）</title>
+      <rect class="cell-frame" x="504" y="470" width="184" height="184" rx="16" fill="none" stroke="#3A4A60" stroke-width="1.2"/>
+      <circle cx="596" cy="562" r="72" fill="#173b56" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+      <circle cx="596" cy="562" r="72" fill="url(#heatShadeMain)"/>
+      <circle cx="596" cy="562" r="78" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1" stroke-dasharray="2 5"/>
+      <circle cx="596" cy="562" r="38" fill="url(#faceGradMain)" stroke="#FFFFFF" stroke-width="1.3" filter="url(#faceShadowMain)"/>
+      <circle cx="596" cy="562" r="41.5" fill="none" stroke="rgba(255,255,255,.30)" stroke-width=".8"/>
+      <ellipse cx="585" cy="547" rx="19" ry="9" fill="#FFFFFF" opacity=".55"/>
+      <circle cx="596" cy="562" r="2.2" fill="#1B2433" opacity=".55"/>
+      
+      <text x="514" y="486" class="cell-tag">R0 C2</text>
+      <text x="596" y="648" text-anchor="middle" class="cell-fz">fz 6.5 N</text>
+      
+    </g>
+<g class="unit" role="img" aria-label="row 1, col 0 · fx +5.40 N · fy -2.10 N · fz 41.0 N（示意数据）">
+      <title>row 1, col 0 · fx +5.40 N · fy -2.10 N · fz 41.0 N（示意数据）</title>
+      <rect class="cell-frame" x="104" y="270" width="184" height="184" rx="16" fill="none" stroke="#3A4A60" stroke-width="1.2"/>
+      <circle cx="196" cy="362" r="72" fill="#ca8132" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+      <circle cx="196" cy="362" r="72" fill="url(#heatShadeMain)"/>
+      <circle cx="196" cy="362" r="78" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1" stroke-dasharray="2 5"/>
+      <circle cx="196" cy="362" r="38" fill="url(#faceGradMain)" stroke="#FFFFFF" stroke-width="1.3" filter="url(#faceShadowMain)"/>
+      <circle cx="196" cy="362" r="41.5" fill="none" stroke="rgba(255,255,255,.30)" stroke-width=".8"/>
+      <ellipse cx="185" cy="347" rx="19" ry="9" fill="#FFFFFF" opacity=".55"/>
+      <circle cx="196" cy="362" r="2.2" fill="#1B2433" opacity=".55"/>
+      <g class="shear" aria-hidden="true">
+      <line x1="196.0" y1="362.0" x2="244.6" y2="380.9" stroke="#05080E" stroke-width="6.6" stroke-linecap="round" opacity=".9"/>
+      <line x1="196.0" y1="362.0" x2="244.6" y2="380.9" stroke="#F4F8FF" stroke-width="2.2" stroke-linecap="round"/>
+      <polygon points="244.6,380.9 232.1,381.2 235.6,372.3" fill="#F4F8FF" stroke="#05080E" stroke-width="2.2" stroke-linejoin="round"/>
+    </g>
+      <text x="114" y="286" class="cell-tag">R1 C0</text>
+      <text x="196" y="448" text-anchor="middle" class="cell-fz">fz 41.0 N</text>
+      
+    </g>
+<g class="unit" role="img" aria-label="row 1, col 1 · fx +2.60 N · fy +3.80 N · fz 50.0 N（示意数据）">
+      <title>row 1, col 1 · fx +2.60 N · fy +3.80 N · fz 50.0 N（示意数据）</title>
+      <rect class="cell-frame" x="304" y="270" width="184" height="184" rx="16" fill="none" stroke="#3A4A60" stroke-width="1.2"/>
+      <circle cx="396" cy="362" r="72" fill="#b83b2e" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+      <circle cx="396" cy="362" r="72" fill="url(#heatShadeMain)"/>
+      <circle cx="396" cy="362" r="78" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1" stroke-dasharray="2 5"/>
+      <circle cx="396" cy="362" r="38" fill="url(#faceGradMain)" stroke="#FFFFFF" stroke-width="1.3" filter="url(#faceShadowMain)"/>
+      <circle cx="396" cy="362" r="41.5" fill="none" stroke="rgba(255,255,255,.30)" stroke-width=".8"/>
+      <ellipse cx="385" cy="347" rx="19" ry="9" fill="#FFFFFF" opacity=".55"/>
+      <circle cx="396" cy="362" r="2.2" fill="#1B2433" opacity=".55"/>
+      <g class="shear" aria-hidden="true">
+      <line x1="396.0" y1="362.0" x2="419.4" y2="327.8" stroke="#05080E" stroke-width="6.6" stroke-linecap="round" opacity=".9"/>
+      <line x1="396.0" y1="362.0" x2="419.4" y2="327.8" stroke="#F4F8FF" stroke-width="2.2" stroke-linecap="round"/>
+      <polygon points="419.4,327.8 416.9,340.0 408.9,334.6" fill="#F4F8FF" stroke="#05080E" stroke-width="2.2" stroke-linejoin="round"/>
+    </g>
+      <text x="314" y="286" class="cell-tag">R1 C1</text>
+      <text x="396" y="448" text-anchor="middle" class="cell-fz">fz 50.0 N</text>
+      <rect x="306" y="272" width="180" height="180" rx="16" fill="none" stroke="#FFD166" stroke-width="2.4"/>
+       <rect x="306" y="272" width="180" height="180" rx="16" fill="none" stroke="#FFD166" stroke-width="6" opacity=".12"/>
+       <rect x="426" y="274" width="58" height="18" rx="9" fill="#241D0B" stroke="#FFD166" stroke-width="1"/>
+       <text x="455" y="287" text-anchor="middle" class="sel-badge">选中</text>
+    </g>
+<g class="unit" role="img" aria-label="row 1, col 2 · fx -3.90 N · fy +1.20 N · fz 27.5 N（示意数据）">
+      <title>row 1, col 2 · fx -3.90 N · fy +1.20 N · fz 27.5 N（示意数据）</title>
+      <rect class="cell-frame" x="504" y="270" width="184" height="184" rx="16" fill="none" stroke="#3A4A60" stroke-width="1.2"/>
+      <circle cx="596" cy="362" r="72" fill="#508e74" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+      <circle cx="596" cy="362" r="72" fill="url(#heatShadeMain)"/>
+      <circle cx="596" cy="362" r="78" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1" stroke-dasharray="2 5"/>
+      <circle cx="596" cy="362" r="38" fill="url(#faceGradMain)" stroke="#FFFFFF" stroke-width="1.3" filter="url(#faceShadowMain)"/>
+      <circle cx="596" cy="362" r="41.5" fill="none" stroke="rgba(255,255,255,.30)" stroke-width=".8"/>
+      <ellipse cx="585" cy="347" rx="19" ry="9" fill="#FFFFFF" opacity=".55"/>
+      <circle cx="596" cy="362" r="2.2" fill="#1B2433" opacity=".55"/>
+      <g class="shear" aria-hidden="true">
+      <line x1="596.0" y1="362.0" x2="560.9" y2="351.2" stroke="#05080E" stroke-width="6.6" stroke-linecap="round" opacity=".9"/>
+      <line x1="596.0" y1="362.0" x2="560.9" y2="351.2" stroke="#F4F8FF" stroke-width="2.2" stroke-linecap="round"/>
+      <polygon points="560.9,351.2 573.3,350.0 570.5,359.2" fill="#F4F8FF" stroke="#05080E" stroke-width="2.2" stroke-linejoin="round"/>
+    </g>
+      <text x="514" y="286" class="cell-tag">R1 C2</text>
+      <text x="596" y="448" text-anchor="middle" class="cell-fz">fz 27.5 N</text>
+      
+    </g>
+<g class="unit" role="img" aria-label="row 2, col 0 · fx +0.00 N · fy +0.00 N · fz 9.0 N（示意数据）">
+      <title>row 2, col 0 · fx +0.00 N · fy +0.00 N · fz 9.0 N（示意数据）</title>
+      <rect class="cell-frame" x="104" y="70" width="184" height="184" rx="16" fill="none" stroke="#3A4A60" stroke-width="1.2"/>
+      <circle cx="196" cy="162" r="72" fill="#19435f" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+      <circle cx="196" cy="162" r="72" fill="url(#heatShadeMain)"/>
+      <circle cx="196" cy="162" r="78" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1" stroke-dasharray="2 5"/>
+      <circle cx="196" cy="162" r="38" fill="url(#faceGradMain)" stroke="#FFFFFF" stroke-width="1.3" filter="url(#faceShadowMain)"/>
+      <circle cx="196" cy="162" r="41.5" fill="none" stroke="rgba(255,255,255,.30)" stroke-width=".8"/>
+      <ellipse cx="185" cy="147" rx="19" ry="9" fill="#FFFFFF" opacity=".55"/>
+      <circle cx="196" cy="162" r="2.2" fill="#1B2433" opacity=".55"/>
+      
+      <text x="114" y="86" class="cell-tag">R2 C0</text>
+      <text x="196" y="248" text-anchor="middle" class="cell-fz">fz 9.0 N</text>
+      
+    </g>
+<g class="unit" role="img" aria-label="row 2, col 1 · fx -2.40 N · fy -3.60 N · fz 22.0 N（示意数据）">
+      <title>row 2, col 1 · fx -2.40 N · fy -3.60 N · fz 22.0 N（示意数据）</title>
+      <rect class="cell-frame" x="304" y="70" width="184" height="184" rx="16" fill="none" stroke="#3A4A60" stroke-width="1.2"/>
+      <circle cx="396" cy="162" r="72" fill="#2a7c80" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+      <circle cx="396" cy="162" r="72" fill="url(#heatShadeMain)"/>
+      <circle cx="396" cy="162" r="78" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1" stroke-dasharray="2 5"/>
+      <circle cx="396" cy="162" r="38" fill="url(#faceGradMain)" stroke="#FFFFFF" stroke-width="1.3" filter="url(#faceShadowMain)"/>
+      <circle cx="396" cy="162" r="41.5" fill="none" stroke="rgba(255,255,255,.30)" stroke-width=".8"/>
+      <ellipse cx="385" cy="147" rx="19" ry="9" fill="#FFFFFF" opacity=".55"/>
+      <circle cx="396" cy="162" r="2.2" fill="#1B2433" opacity=".55"/>
+      <g class="shear" aria-hidden="true">
+      <line x1="396.0" y1="162.0" x2="374.4" y2="194.4" stroke="#05080E" stroke-width="6.6" stroke-linecap="round" opacity=".9"/>
+      <line x1="396.0" y1="162.0" x2="374.4" y2="194.4" stroke="#F4F8FF" stroke-width="2.2" stroke-linecap="round"/>
+      <polygon points="374.4,194.4 376.8,182.2 384.8,187.5" fill="#F4F8FF" stroke="#05080E" stroke-width="2.2" stroke-linejoin="round"/>
+    </g>
+      <text x="314" y="86" class="cell-tag">R2 C1</text>
+      <text x="396" y="248" text-anchor="middle" class="cell-fz">fz 22.0 N</text>
+      
+    </g>
+<g class="unit" role="img" aria-label="row 2, col 2 · fx +1.10 N · fy -0.80 N · fz 0.0 N（示意数据）">
+      <title>row 2, col 2 · fx +1.10 N · fy -0.80 N · fz 0.0 N（示意数据）</title>
+      <rect class="cell-frame" x="504" y="70" width="184" height="184" rx="16" fill="none" stroke="#3A4A60" stroke-width="1.2"/>
+      <circle cx="596" cy="162" r="72" fill="#12263f" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+      <circle cx="596" cy="162" r="72" fill="url(#heatShadeMain)"/>
+      <circle cx="596" cy="162" r="78" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1" stroke-dasharray="2 5"/>
+      <circle cx="596" cy="162" r="38" fill="url(#faceGradMain)" stroke="#FFFFFF" stroke-width="1.3" filter="url(#faceShadowMain)"/>
+      <circle cx="596" cy="162" r="41.5" fill="none" stroke="rgba(255,255,255,.30)" stroke-width=".8"/>
+      <ellipse cx="585" cy="147" rx="19" ry="9" fill="#FFFFFF" opacity=".55"/>
+      <circle cx="596" cy="162" r="2.2" fill="#1B2433" opacity=".55"/>
+      <g class="shear" aria-hidden="true">
+      <line x1="596.0" y1="162.0" x2="605.9" y2="169.2" stroke="#05080E" stroke-width="6.6" stroke-linecap="round" opacity=".9"/>
+      <line x1="596.0" y1="162.0" x2="605.9" y2="169.2" stroke="#F4F8FF" stroke-width="2.2" stroke-linecap="round"/>
+      <polygon points="605.9,169.2 593.8,166.3 599.4,158.6" fill="#F4F8FF" stroke="#05080E" stroke-width="2.2" stroke-linejoin="round"/>
+    </g>
+      <text x="514" y="86" class="cell-tag">R2 C2</text>
+      <text x="596" y="248" text-anchor="middle" class="cell-fz">fz 0.0 N</text>
+      
+    </g>
+  <text x="390" y="706" text-anchor="middle" class="axis-note">行号 0 在 +y 负向一侧（下方），列号 0 在 −x 一侧（左侧）；零切向力单元不画箭头（R0 C2、R2 C0）。</text>
+</svg>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="heatbar" aria-hidden="true"></span><span class="lg"><b>fz 法向力</b><small>相对色阶 · 示意数据</small></span></div>
+      <div class="legend-item">
+        <svg width="38" height="20" viewBox="0 0 38 20" aria-hidden="true"><line x1="5" y1="10" x2="26" y2="10" stroke="#F4F8FF" stroke-width="2" stroke-linecap="round"/><polygon points="34,10 24,5.6 24,14.4" fill="#F4F8FF"/></svg>
+        <span class="lg"><b>fx / fy 切向力</b><small>高对比箭头 · 长度=相对大小</small></span>
+      </div>
+      <div class="legend-item"><span class="sw-sel" aria-hidden="true"></span><span class="lg"><b>当前选中单元</b><small>金色双线 · R1 C1</small></span></div>
+      <div class="legend-item"><span class="sw-frame" aria-hidden="true"></span><span class="lg"><b>固定框架 / 逻辑区域</b><small>中性线框 · 不随力着色</small></span></div>
+    </div>
+    <p class="field-note">色阶与色条同源，但仅作示意，未验证感知均匀性或色盲可分性。行号 0 在 +y 负向、列号 0 在 −x 一侧；单元之间的空隙只是渲染分隔，不是本体电容间隙或阵列真实缝隙。悬停高亮仅作交互示意，点击选择在实现时按逻辑单元定位。</p>
+  </section>
+
+  <aside class="side" aria-label="读数面板（全部为示意数据）">
+    <article class="panel card" aria-labelledby="histTitle">
+      <header class="card-head">
+        <div><h3 id="histTitle">选中单元历史 <span class="mono h3-id">R1 C1</span></h3><p class="card-sub">三轴力 · 同一 N 量程</p></div>
+        <span class="tag">示意波形</span>
+      </header>
+      <div class="spark"><svg viewBox="0 0 320 118" role="img" aria-label="选中单元三轴力示意波形">
+    <line x1="36" y1="77.5" x2="300" y2="77.5" stroke="#223044" stroke-width="1"/>
+     <text x="30" y="80.5" text-anchor="end" class="spark-tick">0</text><line x1="36" y1="53.0" x2="300" y2="53.0" stroke="#223044" stroke-width="1"/>
+     <text x="30" y="56.0" text-anchor="end" class="spark-tick">25</text><line x1="36" y1="28.5" x2="300" y2="28.5" stroke="#223044" stroke-width="1"/>
+     <text x="30" y="31.5" text-anchor="end" class="spark-tick">50</text><line x1="36" y1="77.5" x2="300" y2="77.5" stroke="#3A4A60" stroke-width="1" stroke-dasharray="4 4"/><path d="M36.0,72.0 L39.3,72.0 L42.6,71.9 L45.9,71.9 L49.2,71.9 L52.5,72.0 L55.8,72.1 L59.1,72.2 L62.4,72.3 L65.7,72.4 L69.0,72.6 L72.3,72.7 L75.6,72.8 L78.9,72.9 L82.2,73.0 L85.5,73.1 L88.8,73.2 L92.1,73.2 L95.4,73.2 L98.7,73.2 L102.0,73.2 L105.3,73.2 L108.6,73.1 L111.9,73.0 L115.2,73.0 L118.5,72.9 L121.8,72.8 L125.1,72.7 L128.4,72.7 L131.7,72.7 L135.0,72.7 L138.3,72.7 L141.6,72.8 L144.9,72.9 L148.2,73.0 L151.5,73.2 L154.8,73.4 L158.1,73.7 L161.4,74.0 L164.7,74.3 L168.0,74.6 L171.3,74.9 L174.6,75.3 L177.9,75.6 L181.2,75.9 L184.5,76.3 L187.8,76.6 L191.1,76.8 L194.4,77.1 L197.7,77.3 L201.0,77.5 L204.3,77.6 L207.6,77.6 L210.9,77.7 L214.2,77.7 L217.5,77.6 L220.8,77.5 L224.1,77.4 L227.4,77.2 L230.7,77.0 L234.0,76.8 L237.3,76.6 L240.6,76.4 L243.9,76.1 L247.2,75.9 L250.5,75.7 L253.8,75.5 L257.1,75.3 L260.4,75.2 L263.7,75.1 L267.0,75.0 L270.3,74.9 L273.6,74.9 L276.9,74.8 L280.2,74.8 L283.5,74.8 L286.8,74.9 L290.1,74.9 L293.4,74.9 L296.7,75.0 L300.0,75.0" fill="none" stroke="#EF5350" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="300.0" cy="75.0" r="2.4" fill="#EF5350"/><path d="M36.0,72.4 L39.3,72.3 L42.6,72.3 L45.9,72.2 L49.2,72.2 L52.5,72.2 L55.8,72.2 L59.1,72.2 L62.4,72.3 L65.7,72.3 L69.0,72.4 L72.3,72.5 L75.6,72.6 L78.9,72.8 L82.2,72.9 L85.5,73.1 L88.8,73.3 L92.1,73.5 L95.4,73.7 L98.7,73.9 L102.0,74.1 L105.3,74.4 L108.6,74.6 L111.9,74.8 L115.2,75.0 L118.5,75.2 L121.8,75.4 L125.1,75.6 L128.4,75.7 L131.7,75.9 L135.0,76.0 L138.3,76.1 L141.6,76.2 L144.9,76.2 L148.2,76.2 L151.5,76.3 L154.8,76.3 L158.1,76.2 L161.4,76.2 L164.7,76.1 L168.0,76.1 L171.3,76.0 L174.6,75.9 L177.9,75.8 L181.2,75.7 L184.5,75.6 L187.8,75.5 L191.1,75.4 L194.4,75.3 L197.7,75.2 L201.0,75.1 L204.3,75.1 L207.6,75.0 L210.9,75.0 L214.2,74.9 L217.5,74.9 L220.8,74.9 L224.1,74.9 L227.4,74.9 L230.7,74.9 L234.0,75.0 L237.3,75.0 L240.6,75.0 L243.9,75.1 L247.2,75.1 L250.5,75.1 L253.8,75.1 L257.1,75.1 L260.4,75.1 L263.7,75.1 L267.0,75.1 L270.3,75.0 L273.6,74.9 L276.9,74.9 L280.2,74.8 L283.5,74.6 L286.8,74.5 L290.1,74.3 L293.4,74.2 L296.7,74.0 L300.0,73.8" fill="none" stroke="#66BB6A" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="300.0" cy="73.8" r="2.4" fill="#66BB6A"/><path d="M36.0,22.7 L39.3,22.3 L42.6,22.0 L45.9,21.7 L49.2,21.4 L52.5,21.2 L55.8,21.0 L59.1,20.8 L62.4,20.6 L65.7,20.5 L69.0,20.4 L72.3,20.4 L75.6,20.3 L78.9,20.3 L82.2,20.3 L85.5,20.4 L88.8,20.4 L92.1,20.5 L95.4,20.6 L98.7,20.7 L102.0,20.8 L105.3,21.0 L108.6,21.1 L111.9,21.2 L115.2,21.4 L118.5,21.5 L121.8,21.7 L125.1,21.8 L128.4,21.9 L131.7,22.0 L135.0,22.2 L138.3,22.3 L141.6,22.3 L144.9,22.4 L148.2,22.5 L151.5,22.5 L154.8,22.6 L158.1,22.6 L161.4,22.6 L164.7,22.6 L168.0,22.5 L171.3,22.5 L174.6,22.4 L177.9,22.4 L181.2,22.3 L184.5,22.2 L187.8,22.1 L191.1,22.1 L194.4,22.0 L197.7,21.9 L201.0,21.8 L204.3,21.7 L207.6,21.7 L210.9,21.6 L214.2,21.6 L217.5,21.5 L220.8,21.5 L224.1,21.6 L227.4,21.6 L230.7,21.6 L234.0,21.7 L237.3,21.8 L240.6,22.0 L243.9,22.1 L247.2,22.3 L250.5,22.5 L253.8,22.8 L257.1,23.0 L260.4,23.3 L263.7,23.6 L267.0,24.0 L270.3,24.4 L273.6,24.8 L276.9,25.2 L280.2,25.6 L283.5,26.1 L286.8,26.6 L290.1,27.0 L293.4,27.5 L296.7,28.0 L300.0,28.5" fill="none" stroke="#42A5F5" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="300.0" cy="28.5" r="2.4" fill="#42A5F5"/>
+    <text x="36" y="104" class="spark-tick">−10 s</text>
+    <text x="300" y="104" text-anchor="end" class="spark-tick">0 s</text>
+    <text x="30" y="12" text-anchor="end" class="spark-tick">N</text>
+  </svg></div>
+      <div class="spark-legend"><span><i class="dot" style="background:var(--fx)"></i>fx</span><span><i class="dot" style="background:var(--fy)"></i>fy</span><span><i class="dot" style="background:var(--fz)"></i>fz</span></div>
+      <p class="card-note">曲线为页面内置示意波形（最近 10 s），非实测历史；零位虚线 = 0 N。</p>
+    </article>
+
+    <article class="panel card" aria-labelledby="netTitle">
+      <header class="card-head">
+        <div><h3 id="netTitle">阵列合力 · Σf</h3><p class="card-sub">9 个单元示例读数之和</p></div>
+        <span class="tag">示意数据</span>
+      </header>
+      <div class="forces"><div class="force">
+      <span class="fk"><i class="dot" style="background:#EF5350"></i><span class="mono">fx</span></span>
+      <span class="fv mono" style="color:#EF5350">+4.20</span><span class="fu">N</span>
+    </div>
+<div class="force">
+      <span class="fk"><i class="dot" style="background:#66BB6A"></i><span class="mono">fy</span></span>
+      <span class="fv mono" style="color:#66BB6A">+4.50</span><span class="fu">N</span>
+    </div>
+<div class="force">
+      <span class="fk"><i class="dot" style="background:#42A5F5"></i><span class="mono">fz</span></span>
+      <span class="fv mono" style="color:#42A5F5">208.50</span><span class="fu">N</span>
+    </div></div>
+      <p class="card-note">正负号按输入符号显示，单位 N；数据为页面内置示例，非实测、非标定。</p>
+    </article>
+
+    <article class="panel card" aria-labelledby="momentTitle">
+      <header class="card-head">
+        <div><h3 id="momentTitle">合力矩 · 绕阵列几何中心、中心点模型</h3><p class="card-sub">Mx / My / Mz · 单位 N·m</p></div>
+        <span class="tag">示意数据</span>
+      </header>
+      <div class="wrow">
+      <span class="wkey"><i class="dot" style="background:#26C6DA"></i><span class="mono">Mx</span></span>
+      <span class="meter" aria-hidden="true"><i style="left:9.4%;width:40.6%;background:#26C6DA"></i></span>
+      <span class="wval mono" style="color:#26C6DA">-0.28<small>N·m</small></span>
+    </div>
+<div class="wrow">
+      <span class="wkey"><i class="dot" style="background:#FFCA28"></i><span class="mono">My</span></span>
+      <span class="meter" aria-hidden="true"><i style="left:50.0%;width:50.0%;background:#FFCA28"></i></span>
+      <span class="wval mono" style="color:#FFCA28">+0.34<small>N·m</small></span>
+    </div>
+<div class="wrow">
+      <span class="wkey"><i class="dot" style="background:#CE93D8"></i><span class="mono">Mz</span></span>
+      <span class="meter" aria-hidden="true"><i style="left:50.0%;width:5.5%;background:#CE93D8"></i></span>
+      <span class="wval mono" style="color:#CE93D8">+0.04<small>N·m</small></span>
+    </div>
+      <div class="formula mono">M = Σ((r − r0) × f) · r0 = 阵列几何中心</div>
+      <p class="card-note">不含单元内部扭矩（输入只提供三轴力）；条长为卡片内相对比例（示意），数值仅用于排版演示，不代表实物间距、标定或实测。</p>
+    </article>
+
+    <article class="panel card" aria-labelledby="sourceTitle">
+      <header class="card-head">
+        <div><h3 id="sourceTitle">页内数据</h3><p class="card-sub">非实时 · 无硬件连接</p></div>
+        <span class="tag muted">静态</span>
+      </header>
+      <dl class="status-list">
+        <div><dt>数据源</dt><dd class="mono">页面内置示例</dd></div>
+        <div><dt>刷新</dt><dd class="mono">静态 · 无实时更新</dd></div>
+        <div><dt>标定</dt><dd class="mono">未接入</dd></div>
+      </dl>
+      <p class="card-note">真实数据源状态与暂停/恢复属于后续阶段；本预览不模拟采集链路。</p>
+    </article>
+  </aside>
+
+  <section class="panel detail-panel" aria-labelledby="detailTitle">
+    <header class="panel-head">
+      <div class="panel-title">
+        <p class="eyebrow">UNIT STRUCTURE</p>
+        <h2 id="detailTitle">单元结构详情 <span class="h2-sub">俯视 × 剖面 · 五个电容间隙</span></h2>
+        <p class="panel-sub">三层身份分开表达：中性外框 = 固定结构；黄色板 = 活动部分；白色面 = 接触传力面。结构示意，非尺寸图。</p>
+      </div>
+      <div class="detail-chips">
+        <span class="chip warn">结构示意，非尺寸图</span>
+        <span class="chip">间隙宽度刻意放大</span>
+        <span class="chip">无位移 / 电容读数</span>
+      </div>
+    </header>
+    <div class="identity-legend">
+      <span><i class="sw sw-frame"></i>固定外框 / 固定电极</span>
+      <span><i class="sw sw-plate"></i>中央活动板（可动）</span>
+      <span><i class="sw sw-face"></i>受力面（白色圆柱）</span>
+      <span><i class="sw sw-gap"></i>电容间隙（示意，非尺寸）</span>
+      <span><i class="sw sw-silicone"></i>硅胶支撑（分布未确认）</span>
+    </div>
+    <details id="structure-details" class="detail-details" open>
+      <summary class="detail-summary">
+        <span class="chev" aria-hidden="true">▶</span>
+        <span class="sum-title">展开 / 收起结构示意</span>
+        <span class="collapse-state mono">宽屏默认展开 · 可收起</span>
+      </summary>
+      <div class="detail-grid">
+        <article class="schematic" aria-labelledby="topTitle">
+          <header><h3><span class="idx mono">A</span>俯视示意</h3><p>固定外框 · 中央活动板 · 白色受力面 · 四侧电容位置</p></header>
+          <div class="schematic-svg">
+            <svg viewBox="0 0 620 560" role="img" aria-labelledby="topTitle topDesc">
+              <title id="topTitle">单元俯视结构示意</title>
+              <desc id="topDesc">固定外框、中央黄色活动板、白色圆柱受力面与四个侧向电容位置；结构示意，非尺寸图，间隙宽度刻意放大。</desc>
+              <defs>
+                <radialGradient id="whiteFaceTop" cx="36%" cy="30%" r="75%">
+                  <stop offset="0" stop-color="#FFFFFF"/><stop offset=".65" stop-color="#EEF3F9"/><stop offset="1" stop-color="#C3CFDE"/>
+                </radialGradient>
+                <linearGradient id="plateGradTop" x1="0" y1="0" x2=".55" y2="1">
+                  <stop offset="0" stop-color="#F7D05A"/><stop offset=".55" stop-color="#F0B92F"/><stop offset="1" stop-color="#CF9A18"/>
+                </linearGradient>
+                <filter id="faceShadowTop" x="-30%" y="-30%" width="160%" height="160%">
+                  <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#000000" flood-opacity=".5"/>
+                </filter>
+              </defs>
+              <rect x="118" y="58" width="384" height="384" rx="26" fill="#121B29" stroke="#4A5D76" stroke-width="3"/>
+              <rect x="128" y="68" width="364" height="364" rx="20" fill="none" stroke="#26364A" stroke-width="1"/>
+              <rect class="pad" x="198" y="68" width="224" height="38" rx="6"/>
+              <rect class="pad" x="198" y="394" width="224" height="38" rx="6"/>
+              <rect class="pad" x="128" y="138" width="38" height="224" rx="6"/>
+              <rect class="pad" x="454" y="138" width="38" height="224" rx="6"/>
+              <rect class="gap-fill" x="198" y="106" width="224" height="32"/>
+              <rect class="gap-fill" x="198" y="362" width="224" height="32"/>
+              <rect class="gap-fill" x="166" y="138" width="32" height="224"/>
+              <rect class="gap-fill" x="422" y="138" width="32" height="224"/>
+              <line class="gap-line" x1="198" y1="106" x2="422" y2="106"/><line class="gap-line" x1="198" y1="138" x2="422" y2="138"/>
+              <line class="gap-line" x1="198" y1="362" x2="422" y2="362"/><line class="gap-line" x1="198" y1="394" x2="422" y2="394"/>
+              <line class="gap-line" x1="166" y1="138" x2="166" y2="362"/><line class="gap-line" x1="198" y1="138" x2="198" y2="362"/>
+              <line class="gap-line" x1="422" y1="138" x2="422" y2="362"/><line class="gap-line" x1="454" y1="138" x2="454" y2="362"/>
+              <rect x="198" y="138" width="224" height="224" rx="18" fill="url(#plateGradTop)" stroke="#FFE082" stroke-width="2"/>
+              <rect x="206" y="146" width="208" height="208" rx="14" fill="none" stroke="#FFF3C4" stroke-opacity=".28" stroke-width="1"/>
+              <circle cx="310" cy="250" r="76" fill="url(#whiteFaceTop)" stroke="#FFFFFF" stroke-width="1.6" filter="url(#faceShadowTop)"/>
+              <circle cx="310" cy="250" r="80" fill="none" stroke="#C3CFDE" stroke-opacity=".35" stroke-width="1"/>
+              <ellipse cx="292" cy="220" rx="28" ry="12" fill="#FFFFFF" opacity=".6"/>
+              <g aria-hidden="true">
+                <circle cx="310" cy="87" r="12" fill="#0B0F17" stroke="#7DD3FC" stroke-width="1.2"/><text x="310" y="91" text-anchor="middle" class="d-badge">2</text>
+                <circle cx="473" cy="250" r="12" fill="#0B0F17" stroke="#7DD3FC" stroke-width="1.2"/><text x="473" y="254" text-anchor="middle" class="d-badge">1</text>
+                <circle cx="310" cy="413" r="12" fill="#0B0F17" stroke="#7DD3FC" stroke-width="1.2"/><text x="310" y="417" text-anchor="middle" class="d-badge">4</text>
+                <circle cx="147" cy="250" r="12" fill="#0B0F17" stroke="#7DD3FC" stroke-width="1.2"/><text x="147" y="254" text-anchor="middle" class="d-badge">3</text>
+              </g>
+              <text x="508" y="118" class="d-strong">侧向电容×4</text>
+              <text x="508" y="136" class="d-sub">（四侧位置示意）</text>
+              <path class="leader" d="M506,124 L478,190"/><circle class="node" cx="478" cy="190" r="2.4"/>
+              <text x="508" y="296" class="d-strong">中央黄色活动板</text>
+              <text x="508" y="314" class="d-sub">（可动部分）</text>
+              <path class="leader" d="M506,302 L424,302"/><circle class="node" cx="424" cy="302" r="2.4"/>
+              <text x="10" y="188" class="d-strong">白色圆柱受力面</text>
+              <text x="10" y="206" class="d-sub">（接触传力面）</text>
+              <path class="leader" d="M112,194 L246,224"/><circle class="node" cx="246" cy="224" r="2.4"/>
+              <text x="10" y="392" class="d-strong">固定外框</text>
+              <text x="10" y="410" class="d-sub">（本体固定结构）</text>
+              <path class="leader" d="M112,398 L134,388"/><circle class="node" cx="134" cy="388" r="2.4"/>
+              <text x="310" y="474" text-anchor="middle" class="d-mono">1 = +x · 2 = +y · 3 = −x · 4 = −y（屏幕坐标）</text>
+              <text x="310" y="500" text-anchor="middle" class="d-sub">俯视只能看到 4 个侧向电容；第 5 个底部电容位于活动板下方，见剖面示意。</text>
+              <text x="310" y="528" text-anchor="middle" class="d-note">结构示意，非尺寸图 · 间隙宽度刻意放大</text>
+            </svg>
+          </div>
+          <footer>1–4 为四个侧向电容位置（1=+x、2=+y、3=−x、4=−y）；第 5 个底部电容位于活动板下方，俯视不可见。</footer>
+        </article>
+        <article class="schematic" aria-labelledby="secTitle">
+          <header><h3><span class="idx mono">B</span>剖面示意</h3><p>受力面 · 活动板 · 底部固定电极 · 垂直间隙 · 硅胶支撑</p></header>
+          <div class="schematic-svg">
+            <svg viewBox="0 0 720 520" role="img" aria-labelledby="secTitle secDesc">
+              <title id="secTitle">单元剖面结构示意</title>
+              <desc id="secDesc">受力面、中央活动板、底部固定电极、垂直电容间隙与硅胶弹性支撑示意；非尺寸图，间隙宽度刻意放大。</desc>
+              <defs>
+                <linearGradient id="plateGradSec" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#F7D05A"/><stop offset=".5" stop-color="#F0B92F"/><stop offset="1" stop-color="#CF9A18"/>
+                </linearGradient>
+                <linearGradient id="cylGradSec" gradientUnits="userSpaceOnUse" x1="306" y1="0" x2="414" y2="0">
+                  <stop offset="0" stop-color="#A9B8CA"/><stop offset=".3" stop-color="#FFFFFF"/><stop offset=".62" stop-color="#E7EEF6"/><stop offset="1" stop-color="#93A5B9"/>
+                </linearGradient>
+                <radialGradient id="whiteFaceSec" cx="36%" cy="30%" r="75%">
+                  <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D3DDE9"/>
+                </radialGradient>
+                <pattern id="cutHatchSec" width="9" height="9" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                  <line x1="0" y1="0" x2="0" y2="9" stroke="#2E4055" stroke-width="1.4"/>
+                </pattern>
+              </defs>
+              <path d="M140 110 H184 V400 H536 V110 H580 V470 H140 Z" fill="#16202E" stroke="#4A5D76" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M140 110 H184 V400 H536 V110 H580 V470 H140 Z" fill="url(#cutHatchSec)" opacity=".5"/>
+              <rect class="gap-fill" x="184" y="250" width="46" height="50"/>
+              <rect class="gap-fill" x="490" y="250" width="46" height="50"/>
+              <line class="gap-line" x1="184" y1="250" x2="184" y2="300"/><line class="gap-line" x1="230" y1="250" x2="230" y2="300"/>
+              <line class="gap-line" x1="490" y1="250" x2="490" y2="300"/><line class="gap-line" x1="536" y1="250" x2="536" y2="300"/>
+              <rect class="gap-fill" x="282" y="300" width="156" height="56"/>
+              <line class="gap-line" x1="282" y1="300" x2="438" y2="300"/><line class="gap-line" x1="282" y1="356" x2="438" y2="356"/>
+              <rect x="234" y="300" width="38" height="100" rx="12" fill="rgba(125,211,252,.14)" stroke="#7DD3FC" stroke-dasharray="4 3" stroke-width="1.3"/>
+              <path d="M246 312 q 9 10 0 20 q -9 10 0 20 q 9 10 0 20" fill="none" stroke="#7DD3FC" stroke-opacity=".5" stroke-width="1.2"/>
+              <path d="M260 312 q -9 10 0 20 q 9 10 0 20 q -9 10 0 20" fill="none" stroke="#7DD3FC" stroke-opacity=".35" stroke-width="1.2"/>
+              <rect x="448" y="300" width="38" height="100" rx="12" fill="rgba(125,211,252,.14)" stroke="#7DD3FC" stroke-dasharray="4 3" stroke-width="1.3"/>
+              <path d="M460 312 q 9 10 0 20 q -9 10 0 20 q 9 10 0 20" fill="none" stroke="#7DD3FC" stroke-opacity=".5" stroke-width="1.2"/>
+              <path d="M474 312 q -9 10 0 20 q 9 10 0 20 q -9 10 0 20" fill="none" stroke="#7DD3FC" stroke-opacity=".35" stroke-width="1.2"/>
+              <rect class="pad" x="282" y="356" width="156" height="26" rx="5"/>
+              <rect class="pad" x="296" y="382" width="12" height="18" rx="3"/>
+              <rect class="pad" x="412" y="382" width="12" height="18" rx="3"/>
+              <rect x="230" y="250" width="260" height="50" rx="8" fill="url(#plateGradSec)" stroke="#FFE082" stroke-width="2"/>
+              <rect x="238" y="256" width="244" height="10" rx="5" fill="#FFF3C4" opacity=".3"/>
+              <path d="M306 200 L306 236 Q306 250 320 250 L400 250 Q414 250 414 236 L414 200 Z" fill="url(#cylGradSec)" stroke="#E6EDF5" stroke-width="1"/>
+              <ellipse cx="360" cy="200" rx="54" ry="14" fill="url(#whiteFaceSec)" stroke="#FFFFFF" stroke-width="1.3"/>
+              <ellipse cx="348" cy="196" rx="26" ry="6" fill="#FFFFFF" opacity=".75"/>
+              <g aria-hidden="true">
+                <circle cx="207" cy="275" r="12" fill="#0B0F17" stroke="#7DD3FC" stroke-width="1.2"/><text x="207" y="279" text-anchor="middle" class="d-badge">3</text>
+                <circle cx="513" cy="275" r="12" fill="#0B0F17" stroke="#7DD3FC" stroke-width="1.2"/><text x="513" y="279" text-anchor="middle" class="d-badge">1</text>
+                <circle cx="360" cy="328" r="12" fill="#0B0F17" stroke="#7DD3FC" stroke-width="1.2"/><text x="360" y="332" text-anchor="middle" class="d-badge">5</text>
+              </g>
+              <text x="360" y="46" text-anchor="middle" class="d-strong">受力面</text>
+              <text x="360" y="64" text-anchor="middle" class="d-sub">（白色圆柱 · 接触传力面）</text>
+              <path class="leader" d="M360,74 L360,180"/><circle class="node" cx="360" cy="180" r="2.4"/>
+              <text x="600" y="204" class="d-strong">中央活动板</text>
+              <text x="600" y="222" class="d-sub">（黄色 · 可动）</text>
+              <path class="leader" d="M598,210 L494,268"/><circle class="node" cx="494" cy="268" r="2.4"/>
+              <text x="600" y="306" class="d-strong">底部电容×1</text>
+              <text x="600" y="324" class="d-sub">（垂直间隙）</text>
+              <path class="leader" d="M598,312 L442,330"/><circle class="node" cx="442" cy="330" r="2.4"/>
+              <text x="600" y="410" class="d-strong">硅胶弹性支撑</text>
+              <text x="600" y="428" class="d-sub">（功能示意，</text>
+              <text x="600" y="444" class="d-sub">分布未确认）</text>
+              <path class="leader" d="M598,416 L490,374"/><circle class="node" cx="490" cy="374" r="2.4"/>
+              <text x="16" y="232" class="d-strong">侧向电容×4</text>
+              <text x="16" y="250" class="d-sub">（本剖面可见 1、3；</text>
+              <text x="16" y="266" class="d-sub">2、4 在前后方向）</text>
+              <path class="leader" d="M118,240 L202,272"/><circle class="node" cx="202" cy="272" r="2.4"/>
+              <text x="16" y="132" class="d-strong">固定外框 / 固定电极</text>
+              <text x="16" y="150" class="d-sub">（中性固定结构）</text>
+              <path class="leader" d="M112,140 L150,148"/><circle class="node" cx="150" cy="148" r="2.4"/>
+              <text x="360" y="500" text-anchor="middle" class="d-mono">剖面沿 x 方向：可见 3（−x）、1（+x）侧向间隙与 5 底部间隙；2、4 位于前后方向，不在本剖面。</text>
+              <text x="704" y="486" text-anchor="end" class="d-note">结构示意，非尺寸图</text>
+            </svg>
+          </div>
+          <footer>剖面沿 x 方向切开：可见 3（−x）、1（+x）侧向间隙与 5（底部）间隙；2、4 位于前后方向，不在本剖面。</footer>
+        </article>
+      </div>
+      <div class="gap-key">
+        <span class="gap-key-label mono">五个间隙</span>
+        <span class="gap-chip"><svg viewBox="0 0 22 14" aria-hidden="true"><line x1="3" y1="4" x2="19" y2="4"/><line x1="3" y1="10" x2="19" y2="10"/></svg><span class="mono">1</span>侧向 +x</span>
+        <span class="gap-chip"><svg viewBox="0 0 22 14" aria-hidden="true"><line x1="3" y1="4" x2="19" y2="4"/><line x1="3" y1="10" x2="19" y2="10"/></svg><span class="mono">2</span>侧向 +y</span>
+        <span class="gap-chip"><svg viewBox="0 0 22 14" aria-hidden="true"><line x1="3" y1="4" x2="19" y2="4"/><line x1="3" y1="10" x2="19" y2="10"/></svg><span class="mono">3</span>侧向 −x</span>
+        <span class="gap-chip"><svg viewBox="0 0 22 14" aria-hidden="true"><line x1="3" y1="4" x2="19" y2="4"/><line x1="3" y1="10" x2="19" y2="10"/></svg><span class="mono">4</span>侧向 −y</span>
+        <span class="gap-chip"><svg viewBox="0 0 22 14" aria-hidden="true"><line x1="3" y1="4" x2="19" y2="4"/><line x1="3" y1="10" x2="19" y2="10"/></svg><span class="mono">5</span>底部</span>
+        <span class="gap-key-note">4 个侧向 + 1 个底部 = 5 个电容间隙（测量通道，不是 5 个力分量）；本页不显示任何电容或位移读数。</span>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel notes-panel" aria-labelledby="notesTitle">
+    <header class="panel-head">
+      <div class="panel-title">
+        <p class="eyebrow">EVIDENCE BOUNDARY</p>
+        <h2 id="notesTitle">诚实边界与显示约定</h2>
+        <p class="panel-sub">这一页只做设计预览：把结构与力的表达分开，把没有数据来源的量留空，而不是画成实测。</p>
+      </div>
+    </header>
+    <div class="notes-grid">
+      <div class="note-item"><span class="n">01</span><p><b>结构示意，不是尺寸图。</b>部件比例与间隙宽度刻意夸张，只用于辨认位置关系；图中没有尺寸标注，不应据此推断实物几何。</p></div>
+      <div class="note-item"><span class="n">02</span><p><b>不显示没有来源的量。</b>本轮不显示位移、电容或摩擦数值，也不推断接触相态；相关数据与判据尚未提供，前端不自行补造。</p></div>
+      <div class="note-item"><span class="n">03</span><p><b>力与力矩是页面内置示例。</b>三轴力、合力与合力矩均为示意数据，非实测、非标定；页面不声称任何测量结果，也不代表硬件性能。</p></div>
+      <div class="note-item"><span class="n">04</span><p><b>力矩口径写进标题。</b>合力矩固定标注“绕阵列几何中心、中心点模型”；M = Σ((r − r0) × f)，不含单元内部扭矩（输入只有三个力分量）。</p></div>
+      <div class="note-item"><span class="n">05</span><p><b>五路电容是测量通道。</b>不是五个独立力分量；电容到力的反演由传感器侧负责，本前端只消费三轴力。</p></div>
+      <div class="note-item"><span class="n">06</span><p><b>线框与色盘是显示语义。</b>中性线框 = 固定框架 / 逻辑区域；外圈色盘 = fz 示意色阶，白色圆面 = 受力面身份；单元之间空隙只是渲染分隔，不是本体电容间隙或真实缝隙。</p></div>
+      <div class="note-item"><span class="n">07</span><p><b>颜色不是唯一编码。</b>fx 红、fy 绿、fz 蓝；力矩 Mx 青、My 黄、Mz 紫；同时保留文字标签、正负号与单位，便于不依赖颜色阅读。</p></div>
+      <div class="note-item"><span class="n">08</span><p><b>外表面属于后续设想。</b>受力面扩大、各单元受力面共面或连续覆盖层尚未定型；本轮只画当前圆柱受力面，不预设跨单元结构。</p></div>
+      <div class="note-item"><span class="n">09</span><p><b>800 px 可用。</b>单列布局、结构详情默认折叠；折叠只收起结构示意，不遮挡阵列主视图与选中单元读数。</p></div>
+      <div class="note-item"><span class="n">10</span><p><b>这是静态预览。</b>未接入数据源、回放或硬件，也没有暂停/恢复等运行状态；打开文件看到的全部内容都来自本页自身。</p></div>
+    </div>
+  </section>
+
+  <section class="panel tokens-panel" aria-labelledby="tokensTitle">
+    <header class="panel-head">
+      <div class="panel-title">
+        <p class="eyebrow">DESIGN TOKENS</p>
+        <h2 id="tokensTitle">视觉令牌 <span class="h2-sub">供阶段 A 实现对照</span></h2>
+        <p class="panel-sub">暗色仪器方向的最小保留集；所有颜色在本页都有对应用途，未引入装饰性渐变。</p>
+      </div>
+    </header>
+    <div class="token-groups">
+      <div class="token-group">
+        <h4>背景层次</h4>
+        <div class="tok"><i class="sw" style="background:#0B0F17"></i><code>#0B0F17</code>窗口</div>
+        <div class="tok"><i class="sw" style="background:#111827"></i><code>#111827</code>面板</div>
+        <div class="tok"><i class="sw" style="background:#0D131F"></i><code>#0D131F</code>画布</div>
+        <div class="tok"><i class="sw" style="background:#0F1724"></i><code>#0F1724</code>面板升阶</div>
+      </div>
+      <div class="token-group">
+        <h4>结构线与文字</h4>
+        <div class="tok"><i class="sw" style="background:#4A5D76"></i><code>#4A5D76</code>结构轮廓</div>
+        <div class="tok"><i class="sw" style="background:#1F2B3B"></i><code>#1F2B3B</code>分隔线</div>
+        <div class="tok"><i class="sw" style="background:#93A4B8"></i><code>#93A4B8</code>次要文字</div>
+        <div class="tok"><i class="sw" style="background:#64748B"></i><code>#64748B</code>注记文字</div>
+      </div>
+      <div class="token-group">
+        <h4>部件身份</h4>
+        <div class="tok"><i class="sw" style="background:linear-gradient(135deg,#F7D05A,#CF9A18)"></i><code>#F0B92F</code>活动板黄</div>
+        <div class="tok"><i class="sw" style="background:linear-gradient(135deg,#FFFFFF,#C3CFDE)"></i><code>#FFFFFF</code>受力面白</div>
+        <div class="tok"><i class="sw" style="background:#FFD166"></i><code>#FFD166</code>选中金</div>
+        <div class="tok"><i class="sw" style="background:#7DD3FC"></i><code>#7DD3FC</code>间隙青</div>
+      </div>
+      <div class="token-group">
+        <h4>力语义</h4>
+        <div class="tok"><i class="sw" style="background:#EF5350"></i><code>#EF5350</code>fx 红</div>
+        <div class="tok"><i class="sw" style="background:#66BB6A"></i><code>#66BB6A</code>fy 绿</div>
+        <div class="tok"><i class="sw" style="background:#42A5F5"></i><code>#42A5F5</code>fz 蓝</div>
+      </div>
+      <div class="token-group">
+        <h4>力矩语义</h4>
+        <div class="tok"><i class="sw" style="background:#26C6DA"></i><code>#26C6DA</code>Mx 青</div>
+        <div class="tok"><i class="sw" style="background:#FFCA28"></i><code>#FFCA28</code>My 黄</div>
+        <div class="tok"><i class="sw" style="background:#CE93D8"></i><code>#CE93D8</code>Mz 紫（提亮）</div>
+      </div>
+      <div class="token-group">
+        <h4>法向力色阶（候选）</h4>
+        <div class="tok" style="flex-wrap:wrap;gap:5px"><i class="sw" style="background:#12263f" title="0%"></i><i class="sw" style="background:#1c4e6b" title="25%"></i><i class="sw" style="background:#2e8a86" title="50%"></i><i class="sw" style="background:#b79b3e" title="70%"></i><i class="sw" style="background:#cf7a2f" title="85%"></i><i class="sw" style="background:#b83b2e" title="100%"></i><code>顺序候选</code></div>
+        <p class="tok" style="display:block;color:var(--dim);line-height:1.5">未验证感知均匀性或色盲可分性；色条与画布使用同一色阶。</p>
+      </div>
+      <div class="token-group">
+        <h4>字体与栅格</h4>
+        <div class="tok"><code>正文</code>Segoe UI / Microsoft YaHei</div>
+        <div class="tok"><code>数字</code>Cascadia Mono / Consolas / ui-monospace</div>
+        <div class="tok"><code>数字特性</code>tabular-nums · tnum</div>
+        <div class="tok"><code>栅格</code>8 px · 圆角 10–12 px · 断点 980 px</div>
+      </div>
+    </div>
+    <p class="token-note">令牌用于评审与实现对照，不构成标定、尺寸或硬件参数；任何数值样例都只出现在被标注为“示意数据”的读数区。</p>
+  </section>
+</main>
+
+<footer>
+  <span><span class="mono">docs/mockups/2026-10-19-stage-a-preview.html</span> · 阶段 A 静态设计预览 · 非产品代码</span>
+  <span>参考：<a href="../superpowers/specs/2026-10-19-capacitive-taxel-viewer-design.md">五间隙电容单元：前端适配设计与改造计划（2026-10-19）</a></span>
+  <span>未运行 GUI / 硬件；页内力值与波形均为内置示意数据。</span>
+</footer>
+
+<script>
+(function () {
+  var details = document.getElementById('structure-details');
+  if (!details) { return; }
+  var hint = details.querySelector('.collapse-state');
+  var mq = window.matchMedia('(max-width: 980px)');
+  function render() {
+    if (mq.matches) {
+      details.open = false;
+      if (hint) { hint.textContent = '窄屏默认折叠 · 点击展开'; }
+    } else {
+      details.open = true;
+      if (hint) { hint.textContent = '宽屏默认展开 · 可收起'; }
+    }
+  }
+  render();
+  if (mq.addEventListener) { mq.addEventListener('change', render); }
+  else if (mq.addListener) { mq.addListener(render); }
+})();
+</script>
+</body>
+</html>

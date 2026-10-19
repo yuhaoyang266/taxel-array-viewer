@@ -4,6 +4,8 @@
 
 This repository provides standalone interactive viewers and real-time animation tools for planar tactile arrays. It visualizes how discrete 3-axis force measurements form a surface force field and compute the net contact wrench about the array geometric centre.
 
+传感器本体适配计划（2026-10-19）：[计划 Review、五间隙原理与前端设计](docs/superpowers/specs/2026-10-19-capacitive-taxel-viewer-design.md)。当前确认的结构为中央活动板、硅胶支撑、四侧电容及底部电容；前端继续接收三轴力，不负责标定。阶段 A（显示层）已实现：`ui_theme.py` 暗色仪器主题、`sensor_structure_items.py` 静态五间隙结构示意（单元窗口“结构详情”按钮展开）、高对比切向箭头与曲线零位参考线；实现规格见 [阶段 A 实现规格](docs/superpowers/specs/2026-10-19-stage-a-implementation-spec.md)。
+
 ---
 
 ## Quickstart
@@ -132,8 +134,8 @@ conda run -n taxel-mpl python -m pip install -r requirements-mpl.txt
 Run unit test suites inside their respective target environments:
 
 ```powershell
-# 1. PyQt viewer, cloud interpolation, and regression test suites:
-conda run -n taxel-pyqt python -m unittest test_cloud_field test_pyqt_live test_pyqt_single_taxel test_review_regressions -v
+# 1. PyQt viewer, cloud interpolation, theme, structure diagram, and regression suites:
+conda run -n taxel-pyqt python -m unittest test_cloud_field test_pyqt_live test_pyqt_single_taxel test_review_regressions test_ui_theme test_sensor_structure_items -v
 
 # 2. Rerun live streaming and recording tests:
 conda run -n tactile-viz python -m unittest test_rerun_live -v

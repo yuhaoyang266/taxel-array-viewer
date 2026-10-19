@@ -8,6 +8,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("PYQTGRAPH_QT_LIB", "PySide6")
 
 import numpy as np
+import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from live_history import LiveHistory
@@ -417,7 +418,8 @@ class CloudViewTests(unittest.TestCase):
         )
         self.assertTrue(window.arrow_lines[0].isVisible())
         self.assertTrue(window.arrow_heads[0].isVisible())
-        self.assertIn("colour=fz, black arrows=fx/fy", window._field_title)
+        self.assertIn("colour=fz, arrows=fx/fy", window._field_title)
+        self.assertNotIn("black", window._field_title)
         window.close()
 
     def test_set_cloud_channel_updates_state_title_and_render(self):
@@ -610,6 +612,81 @@ class PyQtLiveArgumentDefaultTests(unittest.TestCase):
         self.assertEqual(arguments.pitch_y_mm, defaults.pitch_y_mm)
         self.assertEqual(arguments.taxel_width_x_mm, defaults.taxel_width_x_mm)
         self.assertEqual(arguments.taxel_width_y_mm, defaults.taxel_width_y_mm)
+
+
+class StageAThemeTests(unittest.TestCase):
+    """Stage A display-only wiring: subclasses, theme colours, zero lines."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.application = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+
+    def test_taxel_face_items_are_graphics_item_subclasses(self):
+        window = PyQtTaxelWindow(start_timer=False)
+        self.assertTrue(
+            all(isinstance(item, QtWidgets.QGraphicsRectItem) for item in window.taxel_rectangles)
+        )
+        window.close()
+
+        circle = PyQtTaxelWindow(taxel_shape="circle", start_timer=False)
+        self.assertTrue(
+            all(isinstance(item, QtWidgets.QGraphicsEllipseItem) for item in circle.taxel_rectangles)
+        )
+        circle.close()
+
+    def test_face_item_bounding_rect_tracks_rect(self):
+        # Qt inflates boundingRect by half the pen width; the guard is that the
+        # item never rewrites its geometry beyond that inherited behaviour.
+        window = PyQtTaxelWindow(start_timer=False)
+        for item in window.taxel_rectangles:
+            half_pen = item.pen().widthF() / 2.0
+            self.assertEqual(
+                item.boundingRect().adjusted(half_pen, half_pen, -half_pen, -half_pen),
+                item.rect(),
+            )
+        window.close()
+
+    def test_array_title_drops_stale_black_arrow_wording(self):
+        window = PyQtTaxelWindow(start_timer=False)
+        self.assertEqual(window.view_mode, "array")
+        self.assertIn("colour=fz, arrows=fx/fy", window._field_title)
+        self.assertNotIn("black", window._field_title)
+        self.assertIn("synthetic data", window.windowTitle())
+        window.close()
+
+    def test_arrow_items_use_the_high_contrast_theme_colour(self):
+        import ui_theme
+
+        window = PyQtTaxelWindow(start_timer=False)
+        window.advance_frame()
+        pen_colour = window.arrow_lines[0].opts["pen"].color().getRgb()[:3]
+        self.assertEqual(pen_colour, ui_theme.ARROW_LINE_COLOUR)
+        head_colour = window.arrow_heads[0].opts["brush"].color().getRgb()[:3]
+        self.assertEqual(head_colour, ui_theme.ARROW_COLOUR)
+        window.close()
+
+    def test_curve_plots_have_a_zero_reference_line(self):
+        window = PyQtTaxelWindow(start_timer=False)
+        rows_before = {name: plot.viewRange()[1] for name, plot in (
+            ("force", window.force_plot),
+            ("moment", window.moment_plot),
+            ("taxel", window.taxel_plot),
+        )}
+        for plot in (window.force_plot, window.moment_plot, window.taxel_plot):
+            zero_lines = [
+                item for item in plot.items
+                if isinstance(item, pg.InfiniteLine) and item.angle == 0
+            ]
+            self.assertEqual(len(zero_lines), 1)
+            self.assertEqual(zero_lines[0].value(), 0.0)
+        rows_after = {name: plot.viewRange()[1] for name, plot in (
+            ("force", window.force_plot),
+            ("moment", window.moment_plot),
+            ("taxel", window.taxel_plot),
+        )}
+        for name in rows_before:
+            self.assertEqual(rows_before[name], rows_after[name])
+        window.close()
 
 
 if __name__ == "__main__":

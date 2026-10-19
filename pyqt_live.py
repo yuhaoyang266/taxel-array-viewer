@@ -20,6 +20,7 @@ from cloud_field import (
     channel_map,
     interpolate_field,
 )
+import ui_theme
 from live_history import LiveHistory
 from live_source import (
     generate_bottom_right_readings,
@@ -27,20 +28,13 @@ from live_source import (
     generate_uniform_clamp_readings,
 )
 from model import ArrayGeometry, COMPONENTS, TaxelArrayModel
+from sensor_structure_items import TaxelFaceEllipseItem, TaxelFaceRectItem
 
 
 FORCE_COMPONENTS = ("Fx", "Fy", "Fz")
 MOMENT_COMPONENTS = ("Mx", "My", "Mz")
-FORCE_COLOURS = {
-    "Fx": (239, 83, 80),
-    "Fy": (102, 187, 106),
-    "Fz": (66, 165, 245),
-}
-MOMENT_COLOURS = {
-    "Mx": (38, 198, 218),
-    "My": (255, 202, 40),
-    "Mz": (171, 71, 188),
-}
+FORCE_COLOURS = dict(ui_theme.AXIS_COLOURS)
+MOMENT_COLOURS = dict(ui_theme.MOMENT_COLOURS)
 MOMENT_CHANNELS = ("mx", "my", "mz")
 CLOUD_BUTTON_LABELS = {
     "fz": "Fz",
@@ -49,8 +43,12 @@ CLOUD_BUTTON_LABELS = {
     "my": "My",
     "mz": "Mz",
 }
-TAXEL_PEN = (40, 40, 40)
-CLOUD_TAXEL_PEN = (150, 150, 150)
+TAXEL_PEN = ui_theme.TAXEL_PEN
+CLOUD_TAXEL_PEN = ui_theme.CLOUD_TAXEL_PEN
+# Single source of truth for the array-view title. The arrows are no longer
+# drawn black, so the old "black arrows" wording is deliberately gone (the
+# matching assertion in test_pyqt_live is updated with it).
+ARRAY_TITLE_SUFFIX = "colour=fz, arrows=fx/fy"
 # Render-only cell shrink applied per axis when pitch equals taxel width, so a
 # fully pitched-out array still reads as discrete cells instead of one slab.
 GAP_RENDER_SCALE = 0.88
@@ -180,22 +178,28 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
 
     def _setup_window(self):
         pg.setConfigOptions(antialias=True, imageAxisOrder="row-major")
-        self.setWindowTitle("Live 3-axis taxel array")
+        self.setWindowTitle("Live 3-axis taxel array · synthetic data")
         self.resize(1450, 850)
+        ui_theme.apply_window_theme(self)
 
         central_widget = QtWidgets.QWidget(self)
         main_layout = QtWidgets.QVBoxLayout(central_widget)
         self.selected_label = QtWidgets.QLabel(central_widget)
         self.selected_label.setWordWrap(True)
-        self.selected_label.setStyleSheet("font-size: 15px; padding: 4px;")
+        # padding stays 4px: the 800-pixel workspace test compares label and
+        # plot geometry, so the label's box must not grow here.
+        self.selected_label.setStyleSheet(ui_theme.label_qss() + " padding: 4px;")
+        self.selected_label.setFont(ui_theme.mono_font())
         main_layout.addWidget(self.selected_label)
         self._setup_view_buttons(main_layout)
 
         content_layout = QtWidgets.QHBoxLayout()
         main_layout.addLayout(content_layout, stretch=1)
         self.field_plot = pg.PlotWidget()
+        ui_theme.apply_canvas_theme(self.field_plot, "canvas")
         content_layout.addWidget(self.field_plot, stretch=3)
         right_plots = pg.GraphicsLayoutWidget()
+        ui_theme.apply_canvas_theme(right_plots, "panel")
         content_layout.addWidget(right_plots, stretch=2)
         self.setCentralWidget(central_widget)
 
@@ -278,10 +282,11 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
         self._field_title = str(text)
         self.field_plot.setTitle(self._field_title)
 
+    def _array_title(self):
+        return f"{self.scenario} | {ARRAY_TITLE_SUFFIX}"
+
     def _setup_field_plot(self):
-        self._set_field_title(
-            f"{self.scenario} | colour=fz, black arrows=fx/fy"
-        )
+        self._set_field_title(self._array_title())
         self.field_plot.setLabel("bottom", "x", units="mm")
         self.field_plot.setLabel("left", "y", units="mm")
         self.field_plot.setAspectLocked(True)
@@ -314,16 +319,16 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
                 shrink_y = height * inset_y
                 if self.taxel_shape == "circle":
                     if inset_x > 0.0 and inset_y > 0.0:
-                        taxel_item = QtWidgets.QGraphicsEllipseItem(
+                        taxel_item = TaxelFaceEllipseItem(
                             left + shrink_x / 2.0,
                             bottom + shrink_y / 2.0,
                             width - shrink_x,
                             height - shrink_y,
                         )
                     else:
-                        taxel_item = QtWidgets.QGraphicsEllipseItem(left, bottom, width, height)
+                        taxel_item = TaxelFaceEllipseItem(left, bottom, width, height)
                 else:
-                    taxel_item = QtWidgets.QGraphicsRectItem(
+                    taxel_item = TaxelFaceRectItem(
                         left + shrink_x / 2.0,
                         bottom + shrink_y / 2.0,
                         width - shrink_x,
@@ -350,15 +355,15 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
         )
         for _row in range(self.geometry.rows):
             for _col in range(self.geometry.cols):
-                line = pg.PlotDataItem(pen=pg.mkPen((30, 30, 30), width=2))
+                line = pg.PlotDataItem(pen=pg.mkPen(ui_theme.ARROW_LINE_COLOUR, width=2))
                 arrow = pg.ArrowItem(
                     angle=180.0,
                     headLen=arrow_head_length,
                     headWidth=arrow_head_width,
                     tailLen=None,
                     pxMode=False,
-                    pen=pg.mkPen((20, 20, 20)),
-                    brush=pg.mkBrush((20, 20, 20)),
+                    pen=pg.mkPen(ui_theme.ARROW_COLOUR),
+                    brush=pg.mkBrush(ui_theme.ARROW_COLOUR),
                 )
                 line.setZValue(10.0)
                 arrow.setZValue(11.0)
@@ -381,7 +386,26 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
         plot.getAxis("left").enableAutoSIPrefix(False)
         plot.getAxis("bottom").enableAutoSIPrefix(False)
         plot.showGrid(x=True, y=True, alpha=0.25)
-        plot.addLegend(offset=(8, 8))
+        # Horizontal reference at y = 0: the bottom axis is time, so angle=0
+        # (an angle=90 line would sit at x=0, i.e. "now", not at zero force).
+        zero_line = pg.InfiniteLine(
+            angle=0,
+            pos=0.0,
+            movable=False,
+            pen=pg.mkPen(
+                ui_theme.ZERO_LINE_COLOUR,
+                width=1,
+                style=QtCore.Qt.PenStyle.DashLine,
+            ),
+        )
+        zero_line.setZValue(-10.0)
+        # ignoreBounds keeps the automatic Y range identical to before.
+        plot.addItem(zero_line, ignoreBounds=True)
+        plot.addLegend(
+            offset=(8, 8),
+            labelTextColor=ui_theme.TEXT_MUTED,
+            labelTextSize="9pt",
+        )
         plot.hideButtons()
         curves = {}
         for component in components:
@@ -471,7 +495,7 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
             self.cloud_image.setVisible(False)
             if self.cloud_colourbar is not None:
                 self.cloud_colourbar.setVisible(False)
-            self._set_field_title(f"{self.scenario} | colour=fz, black arrows=fx/fy")
+            self._set_field_title(self._array_title())
             if self._last_readings is not None:
                 self._render_array_view(self._last_readings)
         else:
@@ -522,7 +546,9 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
     def _update_cloud_title(self):
         unit = CHANNEL_UNITS[self.cloud_channel]
         if self.cloud_colourbar_ok:
-            self._set_field_title(f"cloud | {self.cloud_channel} [{unit}] | display interpolation only")
+            self._set_field_title(
+                f"cloud | {self.cloud_channel} [{unit}] | display interpolation only"
+            )
         else:
             vmin, vmax = self._cloud_display_range()
             self._set_field_title(
@@ -598,20 +624,7 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
         for row in range(self.geometry.rows):
             for col in range(self.geometry.cols):
                 normalised = float(np.clip(readings[row, col, 2] / self.field_colour_max_n, 0.0, 1.0))
-                if normalised <= 0.45:
-                    fraction = normalised / 0.45
-                    colour = (
-                        round(25 + fraction * 55),
-                        round(55 + fraction * 125),
-                        round(150 + fraction * 85),
-                    )
-                else:
-                    fraction = (normalised - 0.45) / 0.55
-                    colour = (
-                        round(80 + fraction * 165),
-                        round(180 - fraction * 105),
-                        round(235 - fraction * 180),
-                    )
+                colour = ui_theme.field_ramp_colour(normalised)
                 self.taxel_rectangles[item_index].setBrush(pg.mkBrush(colour))
                 fx, fy = readings[row, col, :2]
                 centre_x = x_coordinates_mm[col]

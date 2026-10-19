@@ -12,14 +12,27 @@ os.environ.setdefault("PYQTGRAPH_QT_LIB", "PySide6")
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+import ui_theme
+from sensor_structure_items import (
+    SCHEMATIC_NOTE,
+    SECTION_CAPTION,
+    TOP_VIEW_CAPTION,
+    CrossSectionItem,
+    StructureLegendWidget,
+    StructureMetrics,
+    StructureView,
+    TopViewStructureItem,
+)
+
 
 FORCE_COMPONENTS = ("fx", "fy", "fz")
-FORCE_COLOURS = {
-    "fx": (239, 83, 80),
-    "fy": (102, 187, 106),
-    "fz": (66, 165, 245),
-}
+# Lower-case keys keep the existing curve and taxel lookups unchanged; the
+# values come from the shared theme tokens.
+FORCE_COLOURS = {name.lower(): colour for name, colour in ui_theme.AXIS_COLOURS.items()}
 SCENARIOS = ("clamp-slider", "constant", "dynamic", "sine-shear")
+# The structure detail panel would squeeze the force field on narrow screens,
+# so it only opens above this width and folds itself back below it.
+STRUCTURE_MIN_WINDOW_WIDTH = 900
 
 
 class SingleTaxelHistory:
@@ -172,39 +185,160 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
 
     def _setup_window(self):
         pg.setConfigOptions(antialias=True, imageAxisOrder="row-major")
-        self.setWindowTitle("Single 3-Axis Taxel Sensor Visualizer")
+        self.setWindowTitle(f"Single 3-Axis Taxel Sensor Visualizer · synthetic data ({self.scenario})")
         self.resize(1200, 680)
+        ui_theme.apply_window_theme(self)
 
         central_widget = QtWidgets.QWidget(self)
         main_layout = QtWidgets.QVBoxLayout(central_widget)
 
+        info_row = QtWidgets.QHBoxLayout()
         self.info_label = QtWidgets.QLabel(central_widget)
-        self.info_label.setStyleSheet("font-size: 15px; font-weight: bold; padding: 6px; color: #ECEFF1;")
-        main_layout.addWidget(self.info_label)
+        self.info_label.setWordWrap(True)
+        self.info_label.setStyleSheet(
+            ui_theme.label_qss() + " font-weight: bold; padding: 6px;"
+        )
+        self.info_label.setFont(ui_theme.mono_font(bold=True))
+        info_row.addWidget(self.info_label, stretch=1)
+
+        self.structure_toggle = QtWidgets.QToolButton(central_widget)
+        self.structure_toggle.setText("结构详情")
+        self.structure_toggle.setCheckable(True)
+        self.structure_toggle.setChecked(False)
+        self.structure_toggle.setStyleSheet(ui_theme.toggle_qss())
+        self.structure_toggle.toggled.connect(self.set_structure_details_visible)
+        info_row.addWidget(self.structure_toggle)
+        main_layout.addLayout(info_row)
 
         content_layout = QtWidgets.QHBoxLayout()
         main_layout.addLayout(content_layout, stretch=1)
 
+        left_column = QtWidgets.QVBoxLayout()
+        content_layout.addLayout(left_column, stretch=5)
+
         self.sensor_plot = pg.PlotWidget()
-        content_layout.addWidget(self.sensor_plot, stretch=5)
+        ui_theme.apply_canvas_theme(self.sensor_plot, "canvas")
+        # The plot can be resized without the window resizing (for example when
+        # the structure panel opens), so re-fit on its viewport resize too.
+        self.sensor_plot.viewport().installEventFilter(self)
+        left_column.addWidget(self.sensor_plot, stretch=1)
+
+        # Plot titles must stay short (pyqtgraph sizes the plot from the title),
+        # so the force-field encoding lives in a wrappable caption instead.
+        self.field_legend_label = QtWidgets.QLabel(
+            "力场编码：颜色 = 法向力 fz（N）；箭头 = 切向力 (fx, fy)（N）",
+            central_widget,
+        )
+        self.field_legend_label.setWordWrap(True)
+        self.field_legend_label.setStyleSheet(ui_theme.legend_qss())
+        left_column.addWidget(self.field_legend_label)
+
+        self.structure_panel = self._build_structure_panel(central_widget)
+        self._structure_requested = False
+        self.structure_panel.setVisible(False)
+        left_column.addWidget(self.structure_panel, stretch=0)
 
         self.force_plot = pg.PlotWidget()
+        ui_theme.apply_canvas_theme(self.force_plot, "panel")
         content_layout.addWidget(self.force_plot, stretch=6)
         self.setCentralWidget(central_widget)
 
         self._setup_sensor_plot()
         self._setup_force_plot()
 
+    def _build_structure_panel(self, parent):
+        panel = QtWidgets.QWidget(parent)
+        panel.setObjectName("StructurePanel")
+        ui_theme.apply_panel_theme(panel)
+        layout = QtWidgets.QVBoxLayout(panel)
+        layout.setContentsMargins(6, 6, 6, 6)
+
+        metrics = StructureMetrics.from_diameter(self.diameter_mm)
+        self.structure_top_view = StructureView(TopViewStructureItem(metrics), panel)
+        self.structure_section_view = StructureView(CrossSectionItem(metrics), panel)
+
+        views_row = QtWidgets.QHBoxLayout()
+        for caption, view in (
+            (TOP_VIEW_CAPTION, self.structure_top_view),
+            (SECTION_CAPTION, self.structure_section_view),
+        ):
+            column = QtWidgets.QVBoxLayout()
+            caption_label = QtWidgets.QLabel(caption, panel)
+            caption_label.setWordWrap(True)
+            caption_label.setStyleSheet(ui_theme.legend_qss())
+            column.addWidget(caption_label)
+            view.setMinimumHeight(210)
+            view.setMinimumWidth(140)
+            column.addWidget(view, stretch=1)
+            views_row.addLayout(column, stretch=1)
+        layout.addLayout(views_row)
+
+        self.structure_legend = StructureLegendWidget(panel)
+        layout.addWidget(self.structure_legend)
+
+        self.structure_caption = QtWidgets.QLabel(SCHEMATIC_NOTE, panel)
+        self.structure_caption.setWordWrap(True)
+        self.structure_caption.setStyleSheet(ui_theme.legend_qss())
+        layout.addWidget(self.structure_caption)
+
+        panel.setMinimumWidth(0)
+        panel.setMaximumHeight(400)
+        return panel
+
+    def set_structure_details_visible(self, visible):
+        self._structure_requested = bool(visible)
+        if self.structure_toggle.isChecked() != self._structure_requested:
+            self.structure_toggle.blockSignals(True)
+            self.structure_toggle.setChecked(self._structure_requested)
+            self.structure_toggle.blockSignals(False)
+        self._apply_structure_visibility()
+
+    def _structure_fits(self):
+        return self.width() >= STRUCTURE_MIN_WINDOW_WIDTH
+
+    def _apply_structure_visibility(self):
+        show = self._structure_requested and self._structure_fits()
+        self.structure_panel.setVisible(show)
+        if self._structure_requested and not show:
+            self.structure_toggle.setToolTip("窗口宽度不足 900 px，结构详情已折叠")
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if getattr(self, "structure_panel", None) is not None:
+            self._apply_structure_visibility()
+        if getattr(self, "sensor_plot", None) is not None:
+            self._fit_sensor_view()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if getattr(self, "sensor_plot", None) is not None:
+            self._fit_sensor_view()
+
+    def eventFilter(self, watched, event):
+        sensor_plot = getattr(self, "sensor_plot", None)
+        if (
+            sensor_plot is not None
+            and watched is sensor_plot.viewport()
+            and event.type() == QtCore.QEvent.Type.Resize
+        ):
+            self._fit_sensor_view()
+        return super().eventFilter(watched, event)
+
     def _setup_sensor_plot(self):
         shape_title = f"Circle (Ø={self.diameter_mm:g}mm)" if self.taxel_shape == "circle" else f"Rect ({self.diameter_mm:g}×{self.diameter_mm:g}mm)"
-        self.sensor_plot.setTitle(f"Single Taxel 2D Force Field [{shape_title}] | Colour=fz, Arrow=fx/fy")
+        # Plot titles stay short on purpose: pyqtgraph sizes the PlotItem from
+        # its title, so a long title widens the whole view past the viewport
+        # and clips the diagram. Source/scenario text lives in the info label
+        # and the window title instead.
+        self.sensor_plot.setTitle("Single Taxel 2D Force Field")
         self.sensor_plot.setLabel("bottom", "x", units="mm")
         self.sensor_plot.setLabel("left", "y", units="mm")
-        self.sensor_plot.setAspectLocked(True)
 
-        limit = self.diameter_mm * 0.9
-        self.sensor_plot.setXRange(-limit, limit, padding=0.04)
-        self.sensor_plot.setYRange(-limit, limit, padding=0.04)
+        # Ranges are computed from the widget aspect instead of relying on
+        # setAspectLocked: in pyqtgraph 0.14 an aspect-locked ViewBox inside a
+        # portrait widget grows its own geometry past the viewport and clips the
+        # taxel. Explicit ranges keep cells square at every widget size.
+        self._fit_sensor_view()
         self.sensor_plot.showGrid(x=True, y=True, alpha=0.35)
         self.sensor_plot.hideButtons()
 
@@ -215,8 +349,8 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
             self.taxel_item = QtWidgets.QGraphicsEllipseItem(left, bottom, self.diameter_mm, self.diameter_mm)
         else:
             self.taxel_item = QtWidgets.QGraphicsRectItem(left, bottom, self.diameter_mm, self.diameter_mm)
-        self.taxel_item.setPen(pg.mkPen((50, 50, 50), width=1.5))
-        self.taxel_item.setBrush(pg.mkBrush((25, 55, 150)))
+        self.taxel_item.setPen(pg.mkPen(ui_theme.TAXEL_PEN, width=1.5))
+        self.taxel_item.setBrush(pg.mkBrush(ui_theme.field_ramp_colour(0.0)))
         self.sensor_plot.addItem(self.taxel_item)
 
         center_mark = pg.ScatterPlotItem(
@@ -224,12 +358,12 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
             [0.0],
             size=6,
             pen=pg.mkPen(None),
-            brush=pg.mkBrush((100, 100, 100)),
+            brush=pg.mkBrush(ui_theme.TEXT_MUTED),
             symbol="+",
         )
         self.sensor_plot.addItem(center_mark)
 
-        self.arrow_line = pg.PlotDataItem(pen=pg.mkPen((20, 20, 20), width=3))
+        self.arrow_line = pg.PlotDataItem(pen=pg.mkPen(ui_theme.ARROW_LINE_COLOUR, width=3))
         self.arrow_line.setZValue(10.0)
         self.sensor_plot.addItem(self.arrow_line)
 
@@ -241,8 +375,8 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
             headWidth=arrow_head_width,
             tailLen=None,
             pxMode=False,
-            pen=pg.mkPen((20, 20, 20)),
-            brush=pg.mkBrush((20, 20, 20)),
+            pen=pg.mkPen(ui_theme.ARROW_COLOUR),
+            brush=pg.mkBrush(ui_theme.ARROW_COLOUR),
         )
         self.arrow_head.setZValue(11.0)
         self.sensor_plot.addItem(self.arrow_head)
@@ -257,10 +391,35 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         self.selection_outline = pg.PlotDataItem(
             outline_x,
             outline_y,
-            pen=pg.mkPen((255, 215, 0), width=3),
+            pen=pg.mkPen(ui_theme.SELECTION_COLOUR, width=3),
         )
         self.selection_outline.setZValue(20.0)
         self.sensor_plot.addItem(self.selection_outline)
+
+    def _fit_sensor_view(self):
+        """Keep the taxel square and fully visible inside the current widget.
+
+        The fit is recomputed only when the viewport size actually changes, so
+        it settles after layout without fighting a user's manual zoom.
+        """
+        view_box = self.sensor_plot.getPlotItem().vb
+        size = (max(1, int(view_box.width())), max(1, int(view_box.height())))
+        fitted = getattr(self, "_fitted_viewport_size", None)
+        if size == fitted:
+            return
+        self._fitted_viewport_size = size
+        # Never crop the taxel: both half-ranges stay at least "limit" while
+        # keeping square units, so a tall/narrow window grows the Y range
+        # instead of shrinking X below the taxel diameter.
+        limit = self.diameter_mm * 0.9
+        aspect = size[0] / size[1]
+        y_limit = max(limit, limit / aspect)
+        x_limit = y_limit * aspect
+        self.sensor_plot.getPlotItem().setRange(
+            xRange=(-x_limit, x_limit),
+            yRange=(-y_limit, y_limit),
+            padding=0.04,
+        )
 
     def _setup_force_plot(self):
         self.force_plot.setTitle("3-Axis Force Components History [N]")
@@ -269,7 +428,24 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         self.force_plot.getAxis("left").enableAutoSIPrefix(False)
         self.force_plot.getAxis("bottom").enableAutoSIPrefix(False)
         self.force_plot.showGrid(x=True, y=True, alpha=0.3)
-        self.force_plot.addLegend(offset=(10, 10))
+        # Horizontal reference at y = 0 (the bottom axis is time).
+        zero_line = pg.InfiniteLine(
+            angle=0,
+            pos=0.0,
+            movable=False,
+            pen=pg.mkPen(
+                ui_theme.ZERO_LINE_COLOUR,
+                width=1,
+                style=QtCore.Qt.PenStyle.DashLine,
+            ),
+        )
+        zero_line.setZValue(-10.0)
+        self.force_plot.addItem(zero_line, ignoreBounds=True)
+        self.force_plot.addLegend(
+            offset=(10, 10),
+            labelTextColor=ui_theme.TEXT_MUTED,
+            labelTextSize="9pt",
+        )
         self.force_plot.hideButtons()
 
         self.force_curves = {}
@@ -284,6 +460,8 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         self.force_plot.setYRange(min_limit, max_limit, padding=0.0)
 
     def advance_frame(self):
+        if getattr(self, "sensor_plot", None) is not None:
+            self._fit_sensor_view()
         elapsed_s = time.perf_counter() - self._start_time
         force = generate_single_taxel_reading(
             self.scenario,
@@ -304,21 +482,7 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         fx, fy, fz = force
         ref_fz = max(self.peak_force_n, 1e-6)
         normalised = float(np.clip(fz / ref_fz, 0.0, 1.0))
-        if normalised <= 0.45:
-            fraction = normalised / 0.45
-            colour = (
-                round(25 + fraction * 55),
-                round(55 + fraction * 125),
-                round(150 + fraction * 85),
-            )
-        else:
-            fraction = (normalised - 0.45) / 0.55
-            colour = (
-                round(80 + fraction * 165),
-                round(180 - fraction * 105),
-                round(235 - fraction * 180),
-            )
-        self.taxel_item.setBrush(pg.mkBrush(colour))
+        self.taxel_item.setBrush(pg.mkBrush(ui_theme.field_ramp_colour(normalised)))
 
         endpoint_x = self.arrow_scale_mm_per_n * fx
         endpoint_y = self.arrow_scale_mm_per_n * fy
@@ -353,7 +517,8 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
             f"Single 3-Axis Taxel Sensor | "
             f"fx = {fx:+.2f} N,  fy = {fy:+.2f} N,  fz = {fz:.2f} N  "
             f"(Shear: {magnitude:.2f} N,  Total ||f||: {total_norm:.2f} N)  |  "
-            f"Shape: {self.taxel_shape} ({shape_size})"
+            f"Shape: {self.taxel_shape} ({shape_size})  |  "
+            f"synthetic data · {self.scenario}"
         )
 
     def _update_force_plot(self):
