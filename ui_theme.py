@@ -13,6 +13,7 @@ Every token is a plain module constant so tests can assert them without
 constructing a window.
 """
 
+import numpy as np
 from PySide6 import QtGui
 
 
@@ -60,6 +61,36 @@ SILICONE_FILL = "#1F6F6B"
 SILICONE_PEN = "#3DD6C4"
 GAP_ACCENT = "#22D3EE"
 LEADER_COLOUR = "#7C8BA1"
+
+# Cloud display palettes (UI layer only). cloud_field keeps its own pinned
+# LUTs because apply_lut tests assert their exact RGB values; the array window
+# draws and colours its colourbar from these dark-background-friendly ramps.
+CLOUD_SEQUENTIAL_LUT = (
+    np.array([0.0, 0.25, 0.5, 0.75, 1.0]),
+    np.array(
+        [
+            (15, 23, 42),      # unloaded: near the canvas background
+            (30, 64, 175),
+            (8, 145, 178),
+            (245, 158, 11),
+            (239, 68, 68),     # peak load
+        ],
+        dtype=np.float64,
+    ),
+)
+CLOUD_DIVERGING_LUT = (
+    np.array([-1.0, -0.5, 0.0, 0.5, 1.0]),
+    np.array(
+        [
+            (14, 116, 144),    # negative moment: teal
+            (56, 189, 248),
+            (30, 41, 59),      # zero: dark slate, no white glare on the canvas
+            (251, 146, 60),
+            (244, 63, 94),     # positive moment
+        ],
+        dtype=np.float64,
+    ),
+)
 
 MONO_FAMILIES = (
     "JetBrains Mono",

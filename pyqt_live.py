@@ -14,8 +14,6 @@ from PySide6 import QtCore, QtWidgets
 from cloud_field import (
     CLOUD_CHANNELS,
     CHANNEL_UNITS,
-    DIVERGING_LUT,
-    SEQUENTIAL_LUT,
     apply_lut,
     channel_map,
     interpolate_field,
@@ -49,9 +47,24 @@ CLOUD_TAXEL_PEN = ui_theme.CLOUD_TAXEL_PEN
 # drawn black, so the old "black arrows" wording is deliberately gone (the
 # matching assertion in test_pyqt_live is updated with it).
 ARRAY_TITLE_SUFFIX = "colour=fz, arrows=fx/fy"
+
 # Render-only cell shrink applied per axis when pitch equals taxel width, so a
 # fully pitched-out array still reads as discrete cells instead of one slab.
 GAP_RENDER_SCALE = 0.88
+
+# Display semantics. The nominal hardware has pitch == taxel width, so the
+# blank space between cells is a rendering separation, never a physical gap.
+DISPLAY_INSET_PERCENT = int(round((1.0 - GAP_RENDER_SCALE) * 100))
+GEOMETRY_NOTE = (
+    "离散单元视图：每格是一个单元的受力面。标称 pitch = 单元宽度（无物理间隙）；"
+    f"格间空白是渲染分隔（内缩 {DISPLAY_INSET_PERCENT}%），不是实物缝隙。"
+)
+CLOUD_NOTE = (
+    "单元载荷插值示意：颜色由单元采样点插值得到，"
+    "未直接测量的区域是插值结果而非实测；十字标记为真实采样位置。"
+)
+MOMENT_CLOUD_NOTE = "力矩为各单元力对阵列中心的聚合；该通道为零不代表没有接触。"
+CLOUD_TITLE_SUFFIX = "cell-load interpolation schematic"
 
 
 class PyQtTaxelWindow(QtWidgets.QMainWindow):
@@ -192,6 +205,11 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
         self.selected_label.setFont(ui_theme.mono_font())
         main_layout.addWidget(self.selected_label)
         self._setup_view_buttons(main_layout)
+        # Display-semantics caption: what the cells/blank gaps actually mean.
+        self.field_note = QtWidgets.QLabel(GEOMETRY_NOTE, central_widget)
+        self.field_note.setWordWrap(True)
+        self.field_note.setStyleSheet(ui_theme.legend_qss())
+        main_layout.addWidget(self.field_note)
 
         content_layout = QtWidgets.QHBoxLayout()
         main_layout.addLayout(content_layout, stretch=1)
@@ -285,6 +303,16 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
     def _array_title(self):
         return f"{self.scenario} | {ARRAY_TITLE_SUFFIX}"
 
+    def _update_field_note(self):
+        """Caption for the active view: what is measured and what is not."""
+        if self.view_mode == "cloud":
+            note = CLOUD_NOTE
+            if self.cloud_channel in MOMENT_CHANNELS:
+                note = f"{CLOUD_NOTE} {MOMENT_CLOUD_NOTE}"
+        else:
+            note = GEOMETRY_NOTE
+        self.field_note.setText(note)
+
     def _setup_field_plot(self):
         self._set_field_title(self._array_title())
         self.field_plot.setLabel("bottom", "x", units="mm")
@@ -376,6 +404,24 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
         self.cloud_image.setZValue(-1.0)
         self.cloud_image.hide()
         self.field_plot.addItem(self.cloud_image)
+
+        # Interpolation is a display aid, so the cloud view must show where the
+        # real samples are: one cross per measured cell centre.
+        x_centres, y_centres = self.geometry.centre_coordinates_mm()
+        grid_x, grid_y = np.meshgrid(x_centres, y_centres)
+        self.cloud_sample_positions = (grid_x.reshape(-1), grid_y.reshape(-1))
+        self.cloud_sample_markers = pg.ScatterPlotItem(
+            x=self.cloud_sample_positions[0],
+            y=self.cloud_sample_positions[1],
+            size=9,
+            symbol="+",
+            pen=pg.mkPen(ui_theme.ARROW_COLOUR, width=1.4),
+            brush=None,
+            pxMode=True,
+        )
+        self.cloud_sample_markers.setZValue(15.0)
+        self.cloud_sample_markers.hide()
+        self.field_plot.addItem(self.cloud_sample_markers, ignoreBounds=True)
 
         self.field_plot.scene().sigMouseClicked.connect(self._on_field_click)
 
@@ -493,9 +539,11 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
             self.selection_outline.setVisible(True)
             self.cloud_channel_row.setVisible(False)
             self.cloud_image.setVisible(False)
+            self.cloud_sample_markers.setVisible(False)
             if self.cloud_colourbar is not None:
                 self.cloud_colourbar.setVisible(False)
             self._set_field_title(self._array_title())
+            self._update_field_note()
             if self._last_readings is not None:
                 self._render_array_view(self._last_readings)
         else:
@@ -511,10 +559,12 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
             # identifiable and clickable in cloud mode.
             self.cloud_channel_row.setVisible(True)
             self.cloud_image.setVisible(True)
+            self.cloud_sample_markers.setVisible(True)
             self._sync_cloud_colourbar()
             if self._last_readings is not None:
                 self._render_cloud_view(self._last_readings)
             self._update_cloud_title()
+            self._update_field_note()
 
     def set_cloud_channel(self, channel):
         if channel not in CLOUD_CHANNELS:
@@ -524,6 +574,7 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
         # channel's magnitude must not leak into the new channel's range.
         self._cloud_running_max = 0.0
         self.cloud_channel_buttons[channel].setChecked(True)
+        self._update_field_note()
         if self.view_mode == "cloud":
             self._sync_cloud_colourbar()
             if self._last_readings is not None:
@@ -539,20 +590,23 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
         return (-bound, bound) if moment_channel else (0.0, bound)
 
     def _cloud_lut(self):
+        # The image and the colourbar both read this single source, so they can
+        # never disagree; the palettes are dark-background friendly and live in
+        # the theme (cloud_field's pinned LUTs stay untouched for its tests).
         if self.cloud_channel in MOMENT_CHANNELS:
-            return DIVERGING_LUT
-        return SEQUENTIAL_LUT
+            return ui_theme.CLOUD_DIVERGING_LUT
+        return ui_theme.CLOUD_SEQUENTIAL_LUT
 
     def _update_cloud_title(self):
         unit = CHANNEL_UNITS[self.cloud_channel]
         if self.cloud_colourbar_ok:
             self._set_field_title(
-                f"cloud | {self.cloud_channel} [{unit}] | display interpolation only"
+                f"cloud | {self.cloud_channel} [{unit}] | {CLOUD_TITLE_SUFFIX}"
             )
         else:
             vmin, vmax = self._cloud_display_range()
             self._set_field_title(
-                f"cloud | {self.cloud_channel} [{unit}] | display interpolation only "
+                f"cloud | {self.cloud_channel} [{unit}] | {CLOUD_TITLE_SUFFIX} "
                 f"| range [{vmin:.3g}, {vmax:.3g}] {unit}"
             )
 

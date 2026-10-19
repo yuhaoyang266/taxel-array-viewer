@@ -68,6 +68,21 @@ class ThemeTokenTests(unittest.TestCase):
         ui_theme.apply_canvas_theme(view, "panel")
         self.assertEqual(view.backgroundBrush().color(), QtGui.QColor(ui_theme.PANEL_BG))
 
+    def test_cloud_palettes_are_dark_friendly_and_monotonic(self):
+        import numpy as np
+
+        seq_stops, seq_colours = ui_theme.CLOUD_SEQUENTIAL_LUT
+        self.assertEqual(seq_colours.shape, (len(seq_stops), 3))
+        self.assertTrue(np.all(np.diff(seq_stops) > 0.0))
+        self.assertLess(sum(seq_colours[0]) / 3.0, 60.0)
+
+        div_stops, div_colours = ui_theme.CLOUD_DIVERGING_LUT
+        self.assertEqual(div_colours.shape, (len(div_stops), 3))
+        self.assertTrue(np.all(np.diff(div_stops) > 0.0))
+        midpoint = div_colours[len(div_colours) // 2]
+        self.assertLess(sum(midpoint) / 3.0, 90.0)
+        self.assertLess(sum(div_colours[0]) / 3.0, 150.0)
+
     def test_with_alpha_and_qcolor_coerce_inputs(self):
         self.assertEqual(ui_theme.qcolor("#0B0F17"), QtGui.QColor("#0B0F17"))
         self.assertEqual(ui_theme.qcolor((1, 2, 3)), QtGui.QColor(1, 2, 3))

@@ -4,7 +4,7 @@
 
 This repository provides standalone interactive viewers and real-time animation tools for planar tactile arrays. It visualizes how discrete 3-axis force measurements form a surface force field and compute the net contact wrench about the array geometric centre.
 
-传感器本体适配计划（2026-10-19）：[计划 Review、五间隙原理与前端设计](docs/superpowers/specs/2026-10-19-capacitive-taxel-viewer-design.md)。当前确认的结构为中央活动板、硅胶支撑、四侧电容及底部电容；前端继续接收三轴力，不负责标定。阶段 A（显示层）已实现：`ui_theme.py` 暗色仪器主题、`sensor_structure_items.py` 静态五间隙结构示意（单元窗口“结构详情”按钮展开）、高对比切向箭头与曲线零位参考线；实现规格见 [阶段 A 实现规格](docs/superpowers/specs/2026-10-19-stage-a-implementation-spec.md)。
+传感器本体适配计划（2026-10-19）：[计划 Review、五间隙原理与前端设计](docs/superpowers/specs/2026-10-19-capacitive-taxel-viewer-design.md)。当前确认的结构为中央活动板、硅胶支撑、四侧电容及底部电容；前端继续接收三轴力，不负责标定。阶段 A（显示层）已实现：`ui_theme.py` 暗色仪器主题、`sensor_structure_items.py` 静态五间隙结构示意（单元窗口“结构详情”按钮展开）、高对比切向箭头与曲线零位参考线；实现规格见 [阶段 A 实现规格](docs/superpowers/specs/2026-10-19-stage-a-implementation-spec.md)。阶段 B 第一轮已实现：离散主视图几何语义注记（标称无物理间隙、格间空白为显示分隔）、云图采样点标记与“单元载荷插值示意 / 力矩为零不代表无接触”注记、云图与色条共用暗色 UI 色板（力矩零值不再白屏）；见 [阶段 B 显示语义](docs/superpowers/specs/2026-10-19-stage-b-display-semantics.md)。
 
 ---
 

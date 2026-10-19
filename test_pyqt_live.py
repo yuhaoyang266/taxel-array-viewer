@@ -689,5 +689,80 @@ class StageAThemeTests(unittest.TestCase):
         window.close()
 
 
+class StageBDisplaySemanticsTests(unittest.TestCase):
+    """Stage B round 1: gap semantics, sample positions, theme palette."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.application = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+
+    def test_geometry_note_separates_display_inset_from_physical_gap(self):
+        window = PyQtTaxelWindow(start_timer=False)
+        self.addCleanup(window.close)
+
+        self.assertEqual(
+            window.geometry.pitch_x_mm, window.geometry.taxel_width_x_mm
+        )
+        text = window.field_note.text()
+        self.assertIn("无物理间隙", text)
+        self.assertIn("渲染分隔", text)
+        self.assertNotIn("缝隙是", text)
+
+    def test_cloud_note_explains_interpolation_and_moment_zero(self):
+        window = PyQtTaxelWindow(start_timer=False)
+        self.addCleanup(window.close)
+
+        window.set_view("cloud")
+        self.assertIn("插值", window.field_note.text())
+        self.assertIn("采样位置", window.field_note.text())
+
+        window.set_cloud_channel("mz")
+        self.assertIn("不代表没有接触", window.field_note.text())
+
+        window.set_view("array")
+        self.assertIn("无物理间隙", window.field_note.text())
+
+    def test_cloud_view_marks_every_sample_position(self):
+        window = PyQtTaxelWindow(start_timer=False)
+        self.addCleanup(window.close)
+
+        self.assertFalse(window.cloud_sample_markers.isVisible())
+        window.set_view("cloud")
+        self.assertTrue(window.cloud_sample_markers.isVisible())
+        xs, ys = window.cloud_sample_positions
+        self.assertEqual(len(xs), window.geometry.point_count)
+        expected_x, expected_y = window.geometry.centre_coordinates_mm()
+        self.assertEqual(sorted(set(xs)), sorted(expected_x))
+        self.assertEqual(sorted(set(ys)), sorted(expected_y))
+
+        window.set_view("array")
+        self.assertFalse(window.cloud_sample_markers.isVisible())
+
+    def test_cloud_uses_the_theme_palette_and_bar_follows_it(self):
+        import ui_theme
+
+        window = PyQtTaxelWindow(view="cloud", cloud_channel="mz", start_timer=False)
+        self.addCleanup(window.close)
+
+        stops, colours = window._cloud_lut()
+        np.testing.assert_allclose(stops, ui_theme.CLOUD_DIVERGING_LUT[0])
+        np.testing.assert_allclose(colours, ui_theme.CLOUD_DIVERGING_LUT[1])
+        self.assertIn("interpolation schematic", window._field_title)
+
+    def test_cloud_image_uses_the_same_palette_as_the_bar(self):
+        window = PyQtTaxelWindow(view="cloud", cloud_channel="fz", start_timer=False)
+        self.addCleanup(window.close)
+        window.advance_frame()
+
+        image = window.cloud_image.image
+        self.assertIsNotNone(image)
+        opaque = image[..., 3] > 0
+        self.assertTrue(opaque.any())
+        # The loaded end of the ramp must be dark, not white: that is the whole
+        # point of replacing the pinned white-midpoint palette.
+        rgb = image[..., :3][opaque]
+        self.assertLess(float(rgb.mean()), 200.0)
+
+
 if __name__ == "__main__":
     unittest.main()
