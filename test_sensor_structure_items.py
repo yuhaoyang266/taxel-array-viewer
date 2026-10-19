@@ -330,6 +330,15 @@ class LegendTests(unittest.TestCase):
         self.assertEqual(legend.note_label.text(), ssi.LEGEND_NOTE)
 
 
+class GeometryUncertaintyTests(unittest.TestCase):
+    def test_note_separates_envelope_face_and_pitch(self):
+        text = ssi.GEOMETRY_UNCERTAINTY_NOTE
+        for token in ("本体外轮廓", "白色受力面", "单元中心距", "装配间隙"):
+            self.assertIn(token, text)
+        self.assertIn("尚未确认", text)
+        self.assertNotIn("无物理间隙", text)
+
+
 class StageAFixTests(unittest.TestCase):
     """Regression tests for review findings on the Stage A diagram."""
 

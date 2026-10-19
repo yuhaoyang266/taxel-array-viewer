@@ -16,21 +16,33 @@
 
 事实：标称硬件 pitch == taxel_width == 10 mm，阵列无物理间隙（见 [CHANGE_NOTICE_2026-09-22.md](../../../CHANGE_NOTICE_2026-09-22.md)）。界面上的格间空白来自渲染内缩 GAP_RENDER_SCALE = 0.88（每轴 12%），仅用于把相连单元区分成离散格子。
 
+**不能把"无物理间隙"当作已确认事实。** 需要分别描述三个量：
+
+- **本体外轮廓**：整个传感器占用多大空间。
+- **白色受力面**：实际接触、向活动板传力的区域。
+- **单元中心距（pitch）**：相邻传感器的位置关系。
+
+即使本体紧挨着，白色受力面之间仍可能隔着固定框架；本体之间还可能另有装配间隙。当前 10 mm × 10 mm 与 3 × 3 只是标称演示配置，不能据此推导真实覆盖区。
+
 落地：阵列窗口常驻说明栏 field_note，离散视图文案逐字为
 
-> 离散单元视图：每格是一个单元的受力面。标称 pitch = 单元宽度（无物理间隙）；格间空白是渲染分隔（内缩 12%），不是实物缝隙。
+> 几何为标称演示配置，实际受力面及间隙范围尚未确认。十字表示单元合力的等效位置；云图仅为块级载荷趋势插值。格间空白仅为显示分隔（渲染内缩 12%），不代表本体或受力面之间的实际间隙。
 
-内缩百分比由 GAP_RENDER_SCALE 推导（DISPLAY_INSET_PERCENT），改常量即改文案，不会出现"代码内缩与文案不符"。模型几何（.rect()、命中测试、聚合律）一律不变。
+单元窗口结构详情另有常驻行 structure_geometry_note：
+
+> 本体外轮廓、白色受力面、单元中心距是三个独立量：本体相邻不代表受力面相邻，受力面之间可能有固定框架，本体之间也可能有装配间隙。本图为标称演示配置，实际尺寸与间隙尚未确认。
+
+内缩百分比仍由 GAP_RENDER_SCALE 推导（DISPLAY_INSET_PERCENT），但文案把它限定为显示参数。**在阵列布置与受力面尺寸确认前，不生成任何"真实测量覆盖区"**：当前以离散单元合力图为主视图，云图只作为块级载荷趋势插值。模型几何（.rect()、命中测试、聚合律）一律不变。
 
 ## 2. 离散主视图与覆盖范围（已实现）
 
 - 默认视图仍是离散单元视图；云图是次级显示，不改变"每格一个受力面"的主语义。
-- 云图模式新增 cloud_sample_markers：在全部单元中心画固定像素十字，**明确标出真实采样位置**；切回离散视图即隐藏。
+- 云图模式新增 cell_resultant_markers：在全部单元中心画固定像素十字，表示**该单元合力的等效位置（中心点模型）**；它不是采样点，也不是受力面内的接触点。切回离散视图即隐藏。
 - 云图常驻注记：
 
-> 单元载荷插值示意：颜色由单元采样点插值得到，未直接测量的区域是插值结果而非实测；十字标记为真实采样位置。
+> 云图仅为块级载荷趋势插值，不代表实测连续场；十字表示单元合力的等效位置（中心点模型），不是受力面内的接触点。
 
-- 云图标题不再写 display interpolation only，改为 cell-load interpolation schematic（中文注记在说明栏，避免长标题撑宽视图）。
+- 云图标题不再写 display interpolation only，改为 block-level cell-load trend interpolation（中文注记在说明栏，避免长标题撑宽视图）。
 - 不填零：插值沿用 cloud_field.interpolate_field 的归一化加权平均；零贡献区域为 NaN（透明），未引入任何"缺失即 0"的填充。
 - 力矩通道附注：
 
@@ -60,14 +72,16 @@
 QT_QPA_PLATFORM=offscreen conda run -n taxel-pyqt python -m unittest \
   test_cloud_field test_pyqt_live test_pyqt_single_taxel test_review_regressions \
   test_ui_theme test_sensor_structure_items
-Ran 105 tests ... OK
+Ran 107 tests ... OK
 ```
 
 新增断言：
 
-- test_geometry_note_separates_display_inset_from_physical_gap
-- test_cloud_note_explains_interpolation_and_moment_zero
-- test_cloud_view_marks_every_sample_position
+- test_geometry_note_states_the_uncertainty_instead_of_claiming_a_gap
+- test_cloud_note_explains_block_trend_and_equivalent_position
+- test_cloud_view_marks_every_cell_resultant_position
+- test_structure_panel_states_geometry_uncertainty
+- test_note_separates_envelope_face_and_pitch
 - test_cloud_uses_the_theme_palette_and_bar_follows_it
 - test_cloud_image_uses_the_same_palette_as_the_bar
 - test_cloud_palettes_are_dark_friendly_and_monotonic

@@ -52,19 +52,24 @@ ARRAY_TITLE_SUFFIX = "colour=fz, arrows=fx/fy"
 # fully pitched-out array still reads as discrete cells instead of one slab.
 GAP_RENDER_SCALE = 0.88
 
-# Display semantics. The nominal hardware has pitch == taxel width, so the
-# blank space between cells is a rendering separation, never a physical gap.
+# Display semantics. Geometry is a NOMINAL DEMO CONFIGURATION: neither the
+# body-envelope gap nor the white force-face gap has been confirmed. Bodies can
+# touch while their force faces stay separated by a fixed frame, and bodies can
+# also have assembly clearances. The blank space between cells is render-only
+# and must never be presented as a measured gap.
 DISPLAY_INSET_PERCENT = int(round((1.0 - GAP_RENDER_SCALE) * 100))
 GEOMETRY_NOTE = (
-    "离散单元视图：每格是一个单元的受力面。标称 pitch = 单元宽度（无物理间隙）；"
-    f"格间空白是渲染分隔（内缩 {DISPLAY_INSET_PERCENT}%），不是实物缝隙。"
+    "几何为标称演示配置，实际受力面及间隙范围尚未确认。"
+    "十字表示单元合力的等效位置；云图仅为块级载荷趋势插值。"
+    f"格间空白仅为显示分隔（渲染内缩 {DISPLAY_INSET_PERCENT}%），"
+    "不代表本体或受力面之间的实际间隙。"
 )
 CLOUD_NOTE = (
-    "单元载荷插值示意：颜色由单元采样点插值得到，"
-    "未直接测量的区域是插值结果而非实测；十字标记为真实采样位置。"
+    "云图仅为块级载荷趋势插值，不代表实测连续场；"
+    "十字表示单元合力的等效位置（中心点模型），不是受力面内的接触点。"
 )
 MOMENT_CLOUD_NOTE = "力矩为各单元力对阵列中心的聚合；该通道为零不代表没有接触。"
-CLOUD_TITLE_SUFFIX = "cell-load interpolation schematic"
+CLOUD_TITLE_SUFFIX = "block-level cell-load trend interpolation"
 
 
 class PyQtTaxelWindow(QtWidgets.QMainWindow):
@@ -405,23 +410,24 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
         self.cloud_image.hide()
         self.field_plot.addItem(self.cloud_image)
 
-        # Interpolation is a display aid, so the cloud view must show where the
-        # real samples are: one cross per measured cell centre.
+        # One cross per cell centre: the equivalent position of that cell's
+        # resultant force under the centre-point model. It is NOT the intra-cell
+        # contact point, and it is not a measured sample position.
         x_centres, y_centres = self.geometry.centre_coordinates_mm()
         grid_x, grid_y = np.meshgrid(x_centres, y_centres)
-        self.cloud_sample_positions = (grid_x.reshape(-1), grid_y.reshape(-1))
-        self.cloud_sample_markers = pg.ScatterPlotItem(
-            x=self.cloud_sample_positions[0],
-            y=self.cloud_sample_positions[1],
+        self.cell_resultant_positions = (grid_x.reshape(-1), grid_y.reshape(-1))
+        self.cell_resultant_markers = pg.ScatterPlotItem(
+            x=self.cell_resultant_positions[0],
+            y=self.cell_resultant_positions[1],
             size=9,
             symbol="+",
             pen=pg.mkPen(ui_theme.ARROW_COLOUR, width=1.4),
             brush=None,
             pxMode=True,
         )
-        self.cloud_sample_markers.setZValue(15.0)
-        self.cloud_sample_markers.hide()
-        self.field_plot.addItem(self.cloud_sample_markers, ignoreBounds=True)
+        self.cell_resultant_markers.setZValue(15.0)
+        self.cell_resultant_markers.hide()
+        self.field_plot.addItem(self.cell_resultant_markers, ignoreBounds=True)
 
         self.field_plot.scene().sigMouseClicked.connect(self._on_field_click)
 
@@ -539,7 +545,7 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
             self.selection_outline.setVisible(True)
             self.cloud_channel_row.setVisible(False)
             self.cloud_image.setVisible(False)
-            self.cloud_sample_markers.setVisible(False)
+            self.cell_resultant_markers.setVisible(False)
             if self.cloud_colourbar is not None:
                 self.cloud_colourbar.setVisible(False)
             self._set_field_title(self._array_title())
@@ -559,7 +565,7 @@ class PyQtTaxelWindow(QtWidgets.QMainWindow):
             # identifiable and clickable in cloud mode.
             self.cloud_channel_row.setVisible(True)
             self.cloud_image.setVisible(True)
-            self.cloud_sample_markers.setVisible(True)
+            self.cell_resultant_markers.setVisible(True)
             self._sync_cloud_colourbar()
             if self._last_readings is not None:
                 self._render_cloud_view(self._last_readings)

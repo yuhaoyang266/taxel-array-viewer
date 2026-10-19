@@ -696,47 +696,51 @@ class StageBDisplaySemanticsTests(unittest.TestCase):
     def setUpClass(cls):
         cls.application = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
-    def test_geometry_note_separates_display_inset_from_physical_gap(self):
+    def test_geometry_note_states_the_uncertainty_instead_of_claiming_a_gap(self):
         window = PyQtTaxelWindow(start_timer=False)
         self.addCleanup(window.close)
 
         self.assertEqual(
             window.geometry.pitch_x_mm, window.geometry.taxel_width_x_mm
-        )
+        )  # nominal demo configuration, not a confirmed physical fact
         text = window.field_note.text()
-        self.assertIn("无物理间隙", text)
-        self.assertIn("渲染分隔", text)
-        self.assertNotIn("缝隙是", text)
+        self.assertIn("标称演示配置", text)
+        self.assertIn("尚未确认", text)
+        self.assertIn("显示分隔", text)
+        self.assertIn("不代表", text)
+        self.assertNotIn("无物理间隙", text)
 
-    def test_cloud_note_explains_interpolation_and_moment_zero(self):
+    def test_cloud_note_explains_block_trend_and_equivalent_position(self):
         window = PyQtTaxelWindow(start_timer=False)
         self.addCleanup(window.close)
 
         window.set_view("cloud")
-        self.assertIn("插值", window.field_note.text())
-        self.assertIn("采样位置", window.field_note.text())
+        cloud_text = window.field_note.text()
+        self.assertIn("块级载荷趋势插值", cloud_text)
+        self.assertIn("等效位置", cloud_text)
+        self.assertIn("不是受力面内的接触点", cloud_text)
 
         window.set_cloud_channel("mz")
         self.assertIn("不代表没有接触", window.field_note.text())
 
         window.set_view("array")
-        self.assertIn("无物理间隙", window.field_note.text())
+        self.assertIn("尚未确认", window.field_note.text())
 
-    def test_cloud_view_marks_every_sample_position(self):
+    def test_cloud_view_marks_every_cell_resultant_position(self):
         window = PyQtTaxelWindow(start_timer=False)
         self.addCleanup(window.close)
 
-        self.assertFalse(window.cloud_sample_markers.isVisible())
+        self.assertFalse(window.cell_resultant_markers.isVisible())
         window.set_view("cloud")
-        self.assertTrue(window.cloud_sample_markers.isVisible())
-        xs, ys = window.cloud_sample_positions
+        self.assertTrue(window.cell_resultant_markers.isVisible())
+        xs, ys = window.cell_resultant_positions
         self.assertEqual(len(xs), window.geometry.point_count)
         expected_x, expected_y = window.geometry.centre_coordinates_mm()
         self.assertEqual(sorted(set(xs)), sorted(expected_x))
         self.assertEqual(sorted(set(ys)), sorted(expected_y))
 
         window.set_view("array")
-        self.assertFalse(window.cloud_sample_markers.isVisible())
+        self.assertFalse(window.cell_resultant_markers.isVisible())
 
     def test_cloud_uses_the_theme_palette_and_bar_follows_it(self):
         import ui_theme
@@ -747,7 +751,7 @@ class StageBDisplaySemanticsTests(unittest.TestCase):
         stops, colours = window._cloud_lut()
         np.testing.assert_allclose(stops, ui_theme.CLOUD_DIVERGING_LUT[0])
         np.testing.assert_allclose(colours, ui_theme.CLOUD_DIVERGING_LUT[1])
-        self.assertIn("interpolation schematic", window._field_title)
+        self.assertIn("block-level cell-load trend interpolation", window._field_title)
 
     def test_cloud_image_uses_the_same_palette_as_the_bar(self):
         window = PyQtTaxelWindow(view="cloud", cloud_channel="fz", start_timer=False)

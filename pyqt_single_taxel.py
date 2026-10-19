@@ -14,6 +14,7 @@ from PySide6 import QtCore, QtWidgets
 
 import ui_theme
 from sensor_structure_items import (
+    GEOMETRY_UNCERTAINTY_NOTE,
     SCHEMATIC_NOTE,
     SECTION_CAPTION,
     TOP_VIEW_CAPTION,
@@ -253,9 +254,24 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QVBoxLayout(panel)
         layout.setContentsMargins(6, 6, 6, 6)
 
+        # Scrollable body: the diagram, legend and three note lines need more
+        # room than the panel keeps at a fixed height; scrolling avoids the
+        # overlapping/cropped labels that a compressed layout produced.
+        scroll = QtWidgets.QScrollArea(panel)
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.viewport().setAutoFillBackground(False)
+        scroll.setStyleSheet(ui_theme.scroll_area_qss())
+        content = QtWidgets.QWidget(scroll)
+        content_layout = QtWidgets.QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        scroll.setWidget(content)
+        layout.addWidget(scroll)
+
         metrics = StructureMetrics.from_diameter(self.diameter_mm)
-        self.structure_top_view = StructureView(TopViewStructureItem(metrics), panel)
-        self.structure_section_view = StructureView(CrossSectionItem(metrics), panel)
+        self.structure_top_view = StructureView(TopViewStructureItem(metrics), content)
+        self.structure_section_view = StructureView(CrossSectionItem(metrics), content)
 
         views_row = QtWidgets.QHBoxLayout()
         for caption, view in (
@@ -263,7 +279,7 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
             (SECTION_CAPTION, self.structure_section_view),
         ):
             column = QtWidgets.QVBoxLayout()
-            caption_label = QtWidgets.QLabel(caption, panel)
+            caption_label = QtWidgets.QLabel(caption, content)
             caption_label.setWordWrap(True)
             caption_label.setStyleSheet(ui_theme.legend_qss())
             column.addWidget(caption_label)
@@ -271,15 +287,22 @@ class SingleTaxelWindow(QtWidgets.QMainWindow):
             view.setMinimumWidth(140)
             column.addWidget(view, stretch=1)
             views_row.addLayout(column, stretch=1)
-        layout.addLayout(views_row)
+        content_layout.addLayout(views_row)
 
-        self.structure_legend = StructureLegendWidget(panel)
-        layout.addWidget(self.structure_legend)
+        self.structure_legend = StructureLegendWidget(content)
+        content_layout.addWidget(self.structure_legend)
 
-        self.structure_caption = QtWidgets.QLabel(SCHEMATIC_NOTE, panel)
+        self.structure_caption = QtWidgets.QLabel(SCHEMATIC_NOTE, content)
         self.structure_caption.setWordWrap(True)
         self.structure_caption.setStyleSheet(ui_theme.legend_qss())
-        layout.addWidget(self.structure_caption)
+        content_layout.addWidget(self.structure_caption)
+
+        # Envelope, force face and centre pitch are independent quantities; the
+        # diagram is nominal and must say so.
+        self.structure_geometry_note = QtWidgets.QLabel(GEOMETRY_UNCERTAINTY_NOTE, content)
+        self.structure_geometry_note.setWordWrap(True)
+        self.structure_geometry_note.setStyleSheet(ui_theme.legend_qss())
+        content_layout.addWidget(self.structure_geometry_note)
 
         panel.setMinimumWidth(0)
         panel.setMaximumHeight(400)

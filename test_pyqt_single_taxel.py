@@ -243,6 +243,17 @@ class StageAStructurePanelTests(unittest.TestCase):
         self.assertIn("fx", text)
         self.assertIn("箭头", text)
 
+    def test_structure_panel_states_geometry_uncertainty(self):
+        from sensor_structure_items import GEOMETRY_UNCERTAINTY_NOTE
+
+        window = SingleTaxelWindow(start_timer=False)
+        self.addCleanup(window.close)
+
+        text = window.structure_geometry_note.text()
+        self.assertEqual(text, GEOMETRY_UNCERTAINTY_NOTE)
+        for token in ("本体外轮廓", "白色受力面", "单元中心距", "尚未确认"):
+            self.assertIn(token, text)
+
     def test_info_label_contract_survives_the_structure_panel(self):
         window = SingleTaxelWindow(start_timer=False)
         self.addCleanup(window.close)

@@ -188,6 +188,19 @@ def legend_qss():
     return f"color: {TEXT_MUTED};"
 
 
+def scroll_area_qss():
+    """Transparent scroll area with a slim dark scrollbar for detail panels."""
+    return (
+        "QScrollArea { background: transparent; border: none; }"
+        "QScrollArea > QWidget > QWidget { background: transparent; }"
+        f"QScrollBar:vertical {{ background: {WINDOW_BG}; width: 8px; margin: 0px; border: none; }}"
+        f"QScrollBar::handle:vertical {{ background: {BORDER}; min-height: 24px; border-radius: 4px; }}"
+        "QScrollBar::handle:vertical:hover { background: #3B4D66; }"
+        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }"
+        "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }"
+    )
+
+
 def toggle_qss():
     """Compact toggle button used only by the single-taxel window.
 

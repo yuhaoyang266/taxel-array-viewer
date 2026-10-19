@@ -66,6 +66,15 @@ TOP_VIEW_CAPTION = "俯视示意：固定外框 + 中央活动板 + 四侧电容
 SECTION_CAPTION = "剖面示意：底部电容 + 侧向电容；硅胶位置仅示意"
 IN_SCENE_NOTE = "结构示意，非尺寸图"
 
+# Three quantities the diagram must never conflate: the body envelope, the white
+# force face that actually transmits load, and the cell centre pitch. Bodies can
+# be adjacent while force faces stay apart, and bodies can have assembly gaps.
+GEOMETRY_UNCERTAINTY_NOTE = (
+    "本体外轮廓、白色受力面、单元中心距是三个独立量：本体相邻不代表受力面相邻，"
+    "受力面之间可能有固定框架，本体之间也可能有装配间隙。"
+    "本图为标称演示配置，实际尺寸与间隙尚未确认。"
+)
+
 LEGEND_ITEMS = (
     ("固定外框 / 固定电极", "本体固定结构", FRAME_PEN),
     ("中央活动板", "随受力运动的部件", MOVING_PLATE_FILL),
