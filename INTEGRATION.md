@@ -120,8 +120,23 @@ def next_readings(elapsed_s: float) -> np.ndarray:
 刷新入口，并处理时间戳及失效状态，不能承诺只替换一个现成函数即完成热切换。
 传输层（串口/UDP/CAN/厂商 SDK 解析）属于另行约定的数据源适配工作。
 
-文件重放可以采用 `.npz` 作为后续方案：记录时间戳及力数组，再实现重放适配器。
-当前仓库没有这一文件回放入口或时间轴拖动控件，不应写成已支持功能。
+文件重放已实现：`replay_live.py --npz <文件>`（纯读取，不含标定；不启动合成源）。
+`recorded_source.py` 负责解析，支持以下三类 `.npz` 布局，统一转换为
+"rows = v、cols = u、3 通道"的帧序列：
+
+| 键 | 形状 | 说明 |
+|---|---|---|
+| `tactile` | `(T, S, 3, U, V)` | ShearCue 仿真记录；`S=2` 时默认命名 `tactile_fixed`/`tactile_moving` |
+| `tactile_fixed` / `tactile_moving` | `(3, U, V)` | 单帧快照 |
+| `readings` + `times` | `(T, rows, cols, 3)` | 桥接轨迹导出格式 |
+
+时间键优先级 `times` → `logical_times` → `actual_times`；都没有时按索引/回放帧率折算，
+并在状态栏标明。几何优先取 ShearCue viewer config（`--config`，逐传感器）；
+文件本身不带几何时按 CLI 默认标称值显示，状态栏明确写"录制无几何"。
+当前没有时间轴拖动控件；`--no-loop` 用于停在末帧。
+
+实时 UDP 仍由 ShearCue 侧适配器（`scripts/taxel_live_viewer.py`，子类化本仓库窗口）承担；
+本仓库尚无独立 UDP 接收进程，不应写成已支持。
 
 ## 6. 当前状态
 
@@ -130,6 +145,7 @@ def next_readings(elapsed_s: float) -> np.ndarray:
 | `pyqt_live.py` | 可用，合成源 | 阵列实时视图：色块=fz、箭头=fx/fy、点击联动历史 |
 | `pyqt_single_taxel.py` | 可用，合成源 | 单元件三通道历史视图（当前真数据=1 个元件的落点） |
 | `rerun_live.py` | 可用，合成源 | 3D 箭头 + 六分量曲线，Rerun Viewer / `.rrd` 录制 |
+| `replay_live.py` | 可用，录制回放 | 读 `.npz` 录制帧（ShearCue 仿真记录/快照/桥接轨迹），无合成源；无时间轴拖动 |
 | 力/力矩云图 | 可用，合成源 | `pyqt_live.py --view cloud`；通道 Fz、\|剪切\|、Mx/My/Mz，支持自动或固定色标；仅作显示插值 |
 
 运行环境为隔离 conda 环境（`taxel-pyqt`：numpy/pyqtgraph/PySide6），

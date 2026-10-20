@@ -25,11 +25,12 @@ python pyqt_live.py
 
 ## Entry Points & Usage
 
-The repository provides four entry points tailored for different inspection and integration workflows:
+The repository provides five entry points tailored for different inspection and integration workflows:
 
 | Entry Point | Runtime Engine | Primary Use Case | Example Command |
 |---|---|---|---|
 | [`pyqt_live.py`](pyqt_live.py) | PyQtGraph / PySide6 | Real-time array monitoring & click-linked taxel inspection | `python pyqt_live.py` |
+| [`replay_live.py`](replay_live.py) | PyQtGraph / PySide6 | Replay recorded array frames (`.npz`, e.g. ShearCue simulation records) | `python replay_live.py --npz record.npz` |
 | [`pyqt_single_taxel.py`](pyqt_single_taxel.py) | PyQtGraph / PySide6 | Single-taxel 3-axis live response & shear magnitude tracking | `python pyqt_single_taxel.py` |
 | [`rerun_live.py`](rerun_live.py) | Rerun SDK | 3D spatial field arrows & synchronized wrench recording | `python rerun_live.py` |
 | [`app.py`](app.py) | Matplotlib / TkAgg | Offline manual taxel force editing & mechanics teaching | `python app.py` |
@@ -87,6 +88,28 @@ python app.py --rows 3 --cols 3 --pitch-x-mm 20 --pitch-y-mm 20 --force-limit-n 
 2. Adjust signed $f_x, f_y, f_z$ sliders below the canvas.
 3. Observe real-time updates to net force ($F_x, F_y, F_z$) and moment ($M_x, M_y, M_z$) bar charts.
 
+### 5. Recorded Simulation Replay (`replay_live.py`)
+
+Plays recorded array frames through the same PyQt window without any synthetic source:
+
+```powershell
+# Single recording, nominal geometry shown in the status bar
+python replay_live.py --npz record.npz
+
+# ShearCue simulation record + its viewer config (per-sensor geometry)
+python replay_live.py --npz outputs/.../tactile.npz --config taxel_viewer_config.json --hz 30
+```
+
+Accepted `.npz` layouts (all converted to rows = v, cols = u, 3 channels):
+
+| Key(s) | Shape | Notes |
+|---|---|---|
+| `tactile` | `(T, S, 3, U, V)` | ShearCue simulation records; sensors default to `tactile_fixed`/`tactile_moving` |
+| `tactile_fixed` / `tactile_moving` | `(3, U, V)` | One-frame snapshot |
+| `readings` + `times` | `(T, rows, cols, 3)` | Bridge trajectory export |
+
+Time keys are `times`, else `logical_times`, else `actual_times`; without any of them the frame index is divided by `--hz`. Geometry comes from `--config` when present; otherwise the status bar states that the default nominal geometry was used because the recording contains none. `--no-loop`, `--sensor`, `--duration-s` and `--screenshot` are supported.
+
 ---
 
 ## Coordinate & Mechanical Conventions
@@ -98,7 +121,7 @@ All entry points adhere strictly to the following physical contract:
 - **Moment Centre**: Moments are computed relative to the array geometric centre $r_0$.
 - **Aggregation Law**:
   $$\boldsymbol{F} = \sum_i \boldsymbol{f}_i, \quad \boldsymbol{M} = \sum_i (\boldsymbol{r}_i - \boldsymbol{r}_0) \times \boldsymbol{f}_i$$
-- **Nominal Geometry Default**: $3 \times 3$ array, $10\text{ mm} \times 10\text{ mm}$ taxels, $10\text{ mm} \times 10\text{ mm}$ centre pitch (nominal hardware dimensions, contiguous layout with $0\text{ mm}$ physical gap; see [DESIGN.md](DESIGN.md)).
+- **Nominal Geometry Default**: $3 \times 3$ array, $10\text{ mm} \times 10\text{ mm}$ taxels, $10\text{ mm} \times 10\text{ mm}$ centre pitch. This is a nominal demo configuration: the actual force-face size, body envelope and gap ranges are not confirmed, so UI text says so rather than claiming a physical gap (see [stage B semantics](docs/superpowers/specs/2026-10-19-stage-b-display-semantics.md)).
 
 ---
 
@@ -134,8 +157,8 @@ conda run -n taxel-mpl python -m pip install -r requirements-mpl.txt
 Run unit test suites inside their respective target environments:
 
 ```powershell
-# 1. PyQt viewer, cloud interpolation, theme, structure diagram, and regression suites:
-conda run -n taxel-pyqt python -m unittest test_cloud_field test_pyqt_live test_pyqt_single_taxel test_review_regressions test_ui_theme test_sensor_structure_items -v
+# 1. PyQt viewer, cloud interpolation, theme, structure diagram, recorded replay, and regression suites:
+conda run -n taxel-pyqt python -m unittest test_cloud_field test_pyqt_live test_pyqt_single_taxel test_review_regressions test_ui_theme test_sensor_structure_items test_recorded_source test_replay_live -v
 
 # 2. Rerun live streaming and recording tests:
 conda run -n tactile-viz python -m unittest test_rerun_live -v
